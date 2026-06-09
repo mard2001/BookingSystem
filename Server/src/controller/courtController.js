@@ -86,9 +86,9 @@ const insertDefaultTimeSlots = (courtID, callback) => {
         '20:00:00', '21:00:00', '22:00:00', '23:00:00',
     ];
 
-    const slotValues = defaultSlots.map(slotTime => [courtID, slotTime, 1]);
+    const slotValues = defaultSlots.map(slotTime => [courtID, slotTime, 1, getCurrentTimestamp(), getCurrentTimestamp()]);
 
-    db.query(`INSERT INTO tbl_time_slots (courtID, slotTime, isActive) VALUES ?`, [slotValues], (err, result) => {
+    db.query(`INSERT INTO tbl_time_slots (courtID, slotTime, isActive, updatedAt,createdAt) VALUES ?`, [slotValues], (err, result) => {
         if (err) return callback(err);
         callback(null, result);
     });
