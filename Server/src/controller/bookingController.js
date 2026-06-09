@@ -281,7 +281,7 @@ export const getHistoricalBookings = (req, res) => {
     })
 }
 
-export const confirmBooking = (req, res) => {
+export const confirmBooking2 = (req, res) => {
     // return response.ok(res, 'Booking confirmed', req.body);
     const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
     const accountID = req.user.id;
@@ -341,8 +341,8 @@ export const confirmBooking = (req, res) => {
                     db.query(insertBookingQuery, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()], (err, result) => {
                         if (err) return db.rollback(() => response.serverError(res, 'Database error', err));
 
-                        // const newBookingID = result.insertId;
-                        // if (!newBookingID) return db.rollback(() => response.serverError(res, 'Database error', err));
+                        const newBookingID = result.insertId;
+                        if (!newBookingID) return db.rollback(() => response.serverError(res, 'Database error', err));
 
                         const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'booked',getCurrentTimestamp(), getCurrentTimestamp()]);
 
@@ -363,6 +363,79 @@ export const confirmBooking = (req, res) => {
             });
         });
     });
+};
+
+export const confirmBooking = async (req, res) => {
+    const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
+    const accountID = req.user.id;
+
+    if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
+        return response.badRequest(res, 'Missing required fields');
+
+    const conn = await db.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        // check conflicts
+        const placeholders = slotTimes.map(() => '?').join(',');
+        const [conflicts] = await conn.query(`
+            SELECT bs.slotTime
+            FROM tbl_booking_slots bs
+            JOIN tbl_bookings b ON b.bookingID = bs.bookingID
+            WHERE b.courtID = ?
+              AND b.bookingDate = ?
+              AND bs.slotTime IN (${placeholders})
+              AND bs.status = 'booked'
+              AND b.status NOT IN ('cancelled')
+        `, [courtID, bookingDate, ...slotTimes]);
+
+        if (conflicts.length > 0) {
+            const takenSlots = conflicts.map(r => r.slotTime);
+            await conn.rollback();
+            return response.conflict(res, 'Some slot was just taken by someone else. Please go back and reselect.', { takenSlots });
+        }
+
+        // get court rates
+        const [courts] = await conn.query('SELECT * FROM tbl_courts WHERE courtID = ?', [courtID]);
+        const court = courts[0];
+        const dayType = getDayType(bookingDate);
+
+        // compute total
+        let totalAmount = 0;
+        const slotData = slotTimes.map(slotTime => {
+            const timeType = getTimeType(slotTime);
+            const rateKey = getRateKey(dayType, timeType);
+            const rateApplied = parseFloat(court[rateKey]);
+            totalAmount += rateApplied;
+            return { slotTime, rateApplied };
+        });
+
+        // generate booking ID
+        const bookingID = await generateBookingID(bookingDate);
+
+        // insert booking header
+        await conn.query(`
+            INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
+        `, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()]);
+
+        // insert slots
+        const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'booked', getCurrentTimestamp(), getCurrentTimestamp()]);
+        await conn.query(
+            `INSERT INTO tbl_booking_slots (bookingID, slotTime, rateApplied, status, updatedAt, createdAt) VALUES ?`,
+            [slotValues]
+        );
+
+        await conn.commit();
+        return response.ok(res, 'Booking confirmed', { bookingID, totalAmount });
+
+    } catch (err) {
+        await conn.rollback();
+        return response.serverError(res, 'Database error', err);
+    } finally {
+        conn.release();
+    }
 };
 
 export const updateBookingStatus = (req, res) => {
