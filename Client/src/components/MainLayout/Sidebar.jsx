@@ -201,7 +201,7 @@ export const Sidebar = () => {
 
   const onLogout = async () => {
     await handleLogout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (

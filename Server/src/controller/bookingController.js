@@ -335,7 +335,7 @@ export const confirmBooking2 = (req, res) => {
 
                     const insertBookingQuery = `
                         INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'booked', ?, ?)
                     `;
 
                     db.query(insertBookingQuery, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()], (err, result) => {
@@ -439,7 +439,7 @@ export const confirmBooking = async (req, res) => {
         // insert booking header
         await query(`
             INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'booked', ?, ?)
         `, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()]);
 
         // insert slots
@@ -466,7 +466,7 @@ export const updateBookingStatus = (req, res) => {
     if (!bookingID) return response.badRequest(res, 'Booking ID is required.');
     if (!validateFields(req, res, ['status'])) return;
 
-    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'rejected'];
+    const validStatuses = ['pending', 'booked', 'cancelled', 'completed', 'rejected'];
     if (!validStatuses.includes(status)) return response.badRequest(res, 'Invalid status value.');
 
     const checkqry = 'SELECT status FROM tbl_bookings WHERE bookingID = ?';

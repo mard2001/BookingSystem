@@ -15,6 +15,7 @@ export const Login = ({ open, onClose, onSwitchToRegister }) => {
     const { mutate: login, isPending, error } = useLogin();
 
     const handleSubmit = () => {
+        setFieldErrors({});
         const errors = validateForm({username,password}, loginRules);
         if (Object.keys(errors).length > 0) {
             setFieldErrors(errors); 
@@ -93,7 +94,7 @@ export const Login = ({ open, onClose, onSwitchToRegister }) => {
                             {isPasswordVisible ? <Eye size={20} /> : <EyeOff size={20} />}
                         </button>
                     </div>
-                    {fieldErrors.username && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.username} </span>)}
+                    {fieldErrors.password && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.password} </span>)}
                 </div>
                 <div>
                     <button type="button" onClick={handleSubmit} disabled={isPending} className='w-full rounded-2xl h-15 flex justify-center items-center space-x-4 bg-primary text-white shadow-sm hover:shadow-lg hover:bg-primary/90 hover:cursor-pointer'>

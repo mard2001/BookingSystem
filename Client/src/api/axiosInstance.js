@@ -2,7 +2,7 @@ import axios from "axios";
 import { toast } from "sonner";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: import.meta.env.VITE_STAT == 'PRODUCTION' ? import.meta.env.VITE_PROD_API_URL : import.meta.env.VITE_DEV_API_URL,
     timeout: 10000,
     withCredentials: true,
     headers: { "Content-Type": "application/json" },
@@ -51,6 +51,7 @@ api.interceptors.response.use(
 
             try {
                 const refreshRes = await api.post("/api/v1/users/refresh");
+                console.log("refreshRes",refreshRes)
 
                 if (!refreshRes.success) {
                     throw new Error("Refresh failed");

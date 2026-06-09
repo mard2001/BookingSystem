@@ -7,7 +7,7 @@ import { generateUserID } from '../utils/codeGenerator.js';
 import { calculateAgeFromBirthDate, getCurrentTimestamp } from '../utils/calculateValues.js';
 import { compareEncryption, encrypt } from '../utils/Crypto.js';
 import { validateFields } from '../utils/validateFields.js';
-import { generateTokens } from '../utils/tokens.js';
+import { cookieOptions, generateTokens } from '../utils/tokens.js';
 
 export const register = (req, res) => {
     if (!validateFields(req, res, [
@@ -175,7 +175,8 @@ export const registerAdmin = (req, res) => {
 }
 
 export const login = (req, res) => {
-    // res.clearCookie('accessToken', { httpOnly: true, }); 
+    res.clearCookie('accessToken', cookieOptions());
+    res.clearCookie('refreshToken', cookieOptions());
 
     if (!validateFields(req, res, [
         'username', 'password'
@@ -196,32 +197,21 @@ export const login = (req, res) => {
 
         const { accessToken, refreshToken } = generateTokens(data[0]);
     
+        // db.query('DELETE FROM tbl_refresh_tokens WHERE user_id = ?', [data[0].id], (errDel) => {
+        //     if (errDel) return response.serverError(res, 'Database error', errDel);
 
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        const insertToken = 'INSERT INTO tbl_refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)';
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            const insertToken = 'INSERT INTO tbl_refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)';
 
-        db.query(insertToken, [data[0].id, refreshToken, expiresAt],(errToken, dataToken) => {
-            if (errToken) return response.serverError(res, 'Database error', errToken);
+            db.query(insertToken, [data[0].id, refreshToken, expiresAt],(errToken, dataToken) => {
+                if (errToken) return response.serverError(res, 'Database error', errToken);
+                res.cookie('accessToken', accessToken, cookieOptions(15 * 60 * 1000));
+                res.cookie('refreshToken', refreshToken, cookieOptions(7 * 24 * 60 * 60 * 1000));
 
-            res.cookie('accessToken', accessToken, {
-                httpOnly: true,
-                secure: true,
-                partitioned: true, 
-                sameSite: 'None',
-                maxAge: 15 * 60 * 1000           // 15 minutes
+                return response.ok(res, "Welcome back, Champ!", data);
             });
-
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                partitioned: true, 
-                sameSite: 'None',
-                maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days
-            });
-
-            return response.ok(res, "Welcome back, Champ!", data);
-        });
-    })
+        // });
+    });
 }
 
 export const refresh = (req, res) => {
@@ -258,19 +248,8 @@ export const refresh = (req, res) => {
                 (errInsert) => {
                     if (errInsert) return response.serverError(res, 'Database error', errInsert);
 
-                    res.cookie('accessToken', accessToken, {
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production',
-                        sameSite: 'strict',
-                        maxAge: 15 * 60 * 1000
-                    });
-
-                    res.cookie('refreshToken', newRefreshToken, {
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production',
-                        sameSite: 'strict',
-                        maxAge: 7 * 24 * 60 * 60 * 1000
-                    });
+                    res.cookie('accessToken', accessToken, cookieOptions(15 * 60 * 1000));
+                    res.cookie('refreshToken', newRefreshToken, cookieOptions(7 * 24 * 60 * 60 * 1000));
 
                     return response.ok(res, 'Token refreshed');
                 }
@@ -283,20 +262,13 @@ export const logout = (req, res) => {
     const token = req.cookies.refreshToken;
 
     const clearAndRespond = () => {
-        res.clearCookie('accessToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
-        });
-        res.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
-        });
+        res.clearCookie('accessToken', cookieOptions());
+        res.clearCookie('refreshToken', cookieOptions());
         return response.ok(res, 'Logged out successfully');
     };
 
     if (!token) return clearAndRespond();
+    
 
     db.query('DELETE FROM tbl_refresh_tokens WHERE token = ?', [token], (err) => {
         if (err) return response.serverError(res, 'Database error', err);

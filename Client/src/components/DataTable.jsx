@@ -80,12 +80,12 @@ export const DataTable = ({ data = [], columns = [], loading = false, error = nu
                         <th
                         key={header.id}
                         onClick={header.column.getToggleSortingHandler()}
-                        className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 whitespace-nowrap"
+                        className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 whitespace-nowrap"
                         >
-                        <span className="flex items-center gap-1">
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                            {{ asc: <ArrowUpZaIcon className="w-3.5 h-3.5" />, desc: <ArrowDownZaIcon className="w-3.5 h-3.5" /> }[header.column.getIsSorted()] ?? " ↕"}
-                        </span>
+                            <span className="flex items-center justify-center gap-1">
+                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                {{ asc: <ArrowUpZaIcon className="w-3.5 h-3.5" />, desc: <ArrowDownZaIcon className="w-3.5 h-3.5" /> }[header.column.getIsSorted()] ?? " ↕"}
+                            </span>
                         </th>
                     ))}
                     </tr>

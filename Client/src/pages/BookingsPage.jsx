@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { getExportFilename } from '../utils/ExportTable';
-import { getAllBookings } from '../api/services/bookingService';
+import { getAllBookings, updateBookingStatus } from '../api/services/bookingService';
 import { addOneHour, formatCurrency, formatSlotTime, getTimeRange, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
 import { toast } from 'sonner';
@@ -24,7 +24,6 @@ export const BookingsPage = () => {
       subtext: "This month",
       value: data?.filter(book => {
         const bookingDate = new Date(new Date(book.bookingDate).toLocaleString("en-US", { timeZone: "Asia/Manila" }));
-        console.log("data",data, bookingDate)
         return (
           bookingDate.getMonth() === now.getMonth() &&
           bookingDate.getFullYear() === now.getFullYear()
@@ -111,7 +110,7 @@ export const BookingsPage = () => {
           </div>
           <div className='flex flex-col'>
             <p className="font-bold text-gray-800">{row.original.bookerFullName}</p>
-            <span className="text-secondary">{row.original.bookerEmail} | {row.original.bookerContactNumber}</span>
+            <span className="text-secondary whitespace-nowrap">{row.original.bookerEmail} | {row.original.bookerContactNumber}</span>
           </div>
         </div>
       ),
@@ -198,7 +197,7 @@ export const BookingsPage = () => {
         <ActionDropdownBooking
           row={row}
           onEdit={(data) => console.log("Edit", data)}
-          onCancel={(data) => console.log("Cancel", data)}
+          onCancel={(data) => handleEditBookingStatus("cancelled", data)}
           onDelete={(data) => console.log("Delete", data)}
         />
       ),
@@ -210,7 +209,6 @@ export const BookingsPage = () => {
       try {
         setLoading(true);
         const bookings = await getAllBookings();
-        console.log(bookings)
         setData(bookings.data);
       } catch (err) {
         toast.error("Failed to load bookings.");
@@ -221,6 +219,16 @@ export const BookingsPage = () => {
     };
     fetchBookings();
   }, []);
+
+  const handleEditBookingStatus = async (status, bookingData) => {
+    try {
+      console.log()
+      const editResponse = await updateBookingStatus(status, bookingData.bookingID);
+      toast.success(editResponse.message);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
 
 
   return (

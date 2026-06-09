@@ -12,8 +12,8 @@ bookingRouter.get('/get/upcoming/:userID', getUpcomingBookings);
 bookingRouter.get('/get/previous/:userID', getHistoricalBookings);
 bookingRouter.post('/check/availability', checkAvailability);
 bookingRouter.post('/confirmbooking', authenticate, confirmBooking);
-bookingRouter.patch('/update/:bookingID/status', updateBookingStatus);
-bookingRouter.patch('/update/:bookingID/booker-details', updateBookingBookerDetails);
+bookingRouter.put('/update/:bookingID/status', updateBookingStatus);
+bookingRouter.put('/update/:bookingID/booker-details', updateBookingBookerDetails);
 
 
 

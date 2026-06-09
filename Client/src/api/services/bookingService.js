@@ -90,3 +90,16 @@ export const getUpcomingBookings = async(userID) => {
         throw error;
     }
 }
+
+export  const updateBookingStatus = async(status, bookingID) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/update/${bookingID}/status`,{
+            status
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+
+}
+
