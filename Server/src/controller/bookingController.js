@@ -1,4 +1,4 @@
-import { db } from '../connect.js';
+import { db, getConnection } from '../connect.js';
 import { getCurrentTimestamp } from '../utils/calculateValues.js';
 import { generateBookingID } from '../utils/codeGenerator.js';
 import * as response from '../utils/response.js';
@@ -372,14 +372,33 @@ export const confirmBooking = async (req, res) => {
     if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
         return response.badRequest(res, 'Missing required fields');
 
-    const conn = await db.getConnection();
+    const conn = await getConnection();
+
+    const query = (sql, params) => new Promise((resolve, reject) => {
+        conn.query(sql, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+
+    const beginTransaction = () => new Promise((resolve, reject) => {
+        conn.beginTransaction(err => err ? reject(err) : resolve());
+    });
+
+    const commit = () => new Promise((resolve, reject) => {
+        conn.commit(err => err ? reject(err) : resolve());
+    });
+
+    const rollback = () => new Promise((resolve, reject) => {
+        conn.rollback(() => resolve());
+    });
 
     try {
-        await conn.beginTransaction();
+        await beginTransaction();
 
         // check conflicts
         const placeholders = slotTimes.map(() => '?').join(',');
-        const [conflicts] = await conn.query(`
+        const conflicts = await query(`
             SELECT bs.slotTime
             FROM tbl_booking_slots bs
             JOIN tbl_bookings b ON b.bookingID = bs.bookingID
@@ -391,13 +410,14 @@ export const confirmBooking = async (req, res) => {
         `, [courtID, bookingDate, ...slotTimes]);
 
         if (conflicts.length > 0) {
-            const takenSlots = conflicts.map(r => r.slotTime);
-            await conn.rollback();
-            return response.conflict(res, 'Some slot was just taken by someone else. Please go back and reselect.', { takenSlots });
+            await rollback();
+            return response.conflict(res, 'Some slot was just taken by someone else. Please go back and reselect.', {
+                takenSlots: conflicts.map(r => r.slotTime)
+            });
         }
 
         // get court rates
-        const [courts] = await conn.query('SELECT * FROM tbl_courts WHERE courtID = ?', [courtID]);
+        const courts = await query('SELECT * FROM tbl_courts WHERE courtID = ?', [courtID]);
         const court = courts[0];
         const dayType = getDayType(bookingDate);
 
@@ -412,26 +432,28 @@ export const confirmBooking = async (req, res) => {
         });
 
         // generate booking ID
-        const bookingID = await generateBookingID(bookingDate);
+        const bookingID = await new Promise((resolve, reject) => {
+            generateBookingID(bookingDate, (err, id) => err ? reject(err) : resolve(id));
+        });
 
         // insert booking header
-        await conn.query(`
+        await query(`
             INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
         `, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()]);
 
         // insert slots
         const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'booked', getCurrentTimestamp(), getCurrentTimestamp()]);
-        await conn.query(
+        await query(
             `INSERT INTO tbl_booking_slots (bookingID, slotTime, rateApplied, status, updatedAt, createdAt) VALUES ?`,
             [slotValues]
         );
 
-        await conn.commit();
+        await commit();
         return response.ok(res, 'Booking confirmed', { bookingID, totalAmount });
 
     } catch (err) {
-        await conn.rollback();
+        await rollback();
         return response.serverError(res, 'Database error', err);
     } finally {
         conn.release();
