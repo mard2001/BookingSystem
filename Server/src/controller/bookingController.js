@@ -341,8 +341,8 @@ export const confirmBooking = (req, res) => {
                     db.query(insertBookingQuery, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()], (err, result) => {
                         if (err) return db.rollback(() => response.serverError(res, 'Database error', err));
 
-                        // const newBookingID = result.insertId;
-                        // if (!newBookingID) return db.rollback(() => response.serverError(res, 'Database error', err));
+                        const newBookingID = result.insertId;
+                        if (!newBookingID) return db.rollback(() => response.serverError(res, 'Database error', err));
 
                         const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'booked',getCurrentTimestamp(), getCurrentTimestamp()]);
 
