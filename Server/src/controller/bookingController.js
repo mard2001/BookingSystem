@@ -288,6 +288,8 @@ export const confirmBooking = (req, res) => {
     if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
         return response.badRequest(res, 'Missing required fields');
 
+
+    return response.ok(res, 'Booking debug', accountID);
     // begin transaction
     db.beginTransaction(async (err) => {
         if (err) return response.serverError(res, 'Transaction error', err);
