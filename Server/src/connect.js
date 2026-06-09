@@ -9,10 +9,6 @@ export const db = mysql.createConnection({
     database: process.env.DB_DATABASE
 })
 
-mysql.railway.internal
-root
-XhqEgDZGPOORDQuzcEbjCwVYbZPSGCfp
-railway
 
 // PRODUCTION
 // const urlDB = `mysql://root:XhqEgDZGPOORDQuzcEbjCwVYbZPSGCfp@mysql.railway.internal:3306/railway`;
