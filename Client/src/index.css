@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-background: #D6E8F7;      
+  --color-foreground: #E8EFF2;       
+
+  --color-card: #FFFFFF;             
+  --color-surface: #9AB3C4;          
+
+  --color-primary-brighter: #5BA3D0;   
+  --color-primary: #005c9d;           
+  --color-primary-foreground: #FFFFFF;
+  --color-primary-darker: #001D34;
+  --color-primary-lightdark: #00629D;
+  --color-primary-lighter: #aecfe6;
+
+  --color-secondary-brighter: #8A9BA3; 
+  --color-secondary: #697c83;         
+  --color-secondary-foreground: #FFFFFF;
+
+  --color-muted: #4E6370;             
+  --color-muted-foreground: #A8BBC4;   
+
+  --color-border: #3D5F75;            
+
+  --color-highlight: #004F8A;       
+  --radius: 0.75rem;
+}
+
+@layer base{
+  *{
+    font-family: "Lexend", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+    scrollbar-width: thin;
+    
+    --sx-color-primary: var(--color-primary);
+    --sx-color-primary-container: var(--color-primary-lighter);
+    --sx-color-on-primary: #ffffff;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+  }
+  
+  body{
+    /* background-color: var(--color-surface); */
+    background: linear-gradient(to bottom, #FFF, color-mix(in srgb, var(--color-primary) 40%, transparent));
+  }
+
+  .sx-react-calendar-wrapper {
+  --sx-color-background: #ecebec;       
+  --sx-color-surface: #ecebec;           
+  --sx-color-on-surface: #1a1a1a;  
+  --sx-color-border: #f0e2e6;      
+}
+}
+@layer components{
+  .glass {
+    background-color: color-mix(in srgb, var(--color-primary-foreground) 60%, transparent);
+    backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  }
+
+  .glass-strong {
+    background-color: color-mix(in srgb, var(--color-primary-foreground) 80%, transparent);
+    backdrop-filter: blur(24px);
+    border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 30px;
+    color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+  }
+
+  .glow-border {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 20%, transparent),
+      inset 0 0 20px color-mix(in srgb, var(--color-primary) 5%, transparent);
+  }
+
+  .heroLandingImage{
+    width: 100%;
+    height: 60vh;
+    background-image: 
+    linear-gradient(
+      to bottom,
+      rgba(0, 92, 157, 0.95) 0%,    
+      rgba(0, 92, 157, 0.95) 40%,   
+      rgba(0, 92, 157, 0.92) 75%,   
+      rgba(0, 20, 45, 0.95)  100%  
+    ),
+    url(images/ylayaCourt2.jpg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+  }
+}
+@layer utilities{}
