@@ -93,7 +93,20 @@ export const getBookings = (req, res) => {
             FROM tbl_bookings b
             LEFT JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
             JOIN tbl_courts c ON b.courtID = c.courtID
-            GROUP BY b.bookingID
+            GROUP BY 
+                b.bookingID,
+                b.accountID,
+                b.bookerFullName,
+                b.bookerEmail,
+                b.bookerContactNumber,
+                b.courtID,
+                c.courtSport,
+                c.courtLabel,
+                b.bookingDate,
+                b.totalAmount,
+                b.paymentMethod,
+                b.status,
+                b.createdAt
             ORDER BY b.createdAt DESC`;
 
     db.query(query, (err, data) => {
@@ -134,7 +147,20 @@ export const getCalendarBookings = (req, res) => {
         LEFT JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
         JOIN tbl_courts c ON b.courtID = c.courtID
         WHERE b.bookingDate BETWEEN ? AND ?  
-        GROUP BY b.bookingID
+        GROUP BY 
+            b.bookingID,
+            b.accountID,
+            b.bookerFullName,
+            b.bookerEmail,
+            b.bookerContactNumber,
+            b.courtID,
+            c.courtSport,
+            c.courtLabel,
+            b.bookingDate,
+            b.totalAmount,
+            b.paymentMethod,
+            b.status,
+            b.createdAt
         ORDER BY b.createdAt DESC
     `;
 
@@ -174,7 +200,20 @@ export const getUpcomingBookings = (req, res) => {
             WHERE b.accountID = ?
             AND b.bookingDate >= CURDATE()
             AND b.status NOT IN ('cancelled', 'rejected')
-            GROUP BY b.bookingID
+            GROUP BY 
+                b.bookingID,
+                b.accountID,
+                b.bookerFullName,
+                b.bookerEmail,
+                b.bookerContactNumber,
+                b.courtID,
+                c.courtSport,
+                c.courtLabel,
+                b.bookingDate,
+                b.totalAmount,
+                b.paymentMethod,
+                b.status,
+                b.createdAt
             ORDER BY b.bookingDate ASC, MIN(bs.slotTime) ASC;`;
     
     db.query(q, [userID], (err,data) => {
@@ -217,7 +256,20 @@ export const getHistoricalBookings = (req, res) => {
                 b.bookingDate < CURDATE()
                 OR b.status IN ('cancelled', 'rejected', 'completed')
             )
-            GROUP BY b.bookingID
+            GROUP BY 
+                b.bookingID,
+                b.accountID,
+                b.bookerFullName,
+                b.bookerEmail,
+                b.bookerContactNumber,
+                b.courtID,
+                c.courtSport,
+                c.courtLabel,
+                b.bookingDate,
+                b.totalAmount,
+                b.paymentMethod,
+                b.status,
+                b.createdAt
             ORDER BY b.bookingDate DESC, MIN(bs.slotTime) DESC`;
     
     db.query(q, [userID], (err,data) => {
