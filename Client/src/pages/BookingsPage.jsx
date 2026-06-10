@@ -9,11 +9,19 @@ import { getAllBookings, updateBookingStatus } from '../api/services/bookingServ
 import { addOneHour, formatCurrency, formatSlotTime, getTimeRange, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
 import { toast } from 'sonner';
+import { Modal } from '../components/Modal';
 
 export const BookingsPage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const [editDetailsModalOpen, setEditDetailsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedDetails, setSelectedDetails] = useState({});
+  const [editForm, setEditForm] = useState({bookerFullName: "", bookerEmail: "", bookerContactNumber: "", bookingStatus: ""});
+
   const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }));
 
   const bookingStats = useMemo(() => [
@@ -198,7 +206,7 @@ export const BookingsPage = () => {
       cell: ({ row }) => (
         <ActionDropdownBooking
           row={row}
-          onEdit={(data) => console.log("Edit", data)}
+          onEdit={(data) => {handleEditModal(data)}}
           onConfirm={(data) => handleEditBookingStatus("booked", data)}
           onComplete={(data) => handleEditBookingStatus("completed", data)}
           onCancel={(data) => handleEditBookingStatus("cancelled", data)}
@@ -233,6 +241,27 @@ export const BookingsPage = () => {
     }
   }
 
+  const assignEditForm = (booking) => {
+    setEditForm({bookerFullName: booking.bookerFullName, bookerEmail: booking.bookerEmail, bookerContactNumber: booking.bookerContactNumber, bookingStatus: booking.bookingStatus})
+  }
+
+  const handleEditModal = (booking) => {
+    console.log(booking)
+    setEditDetailsModalOpen(true);
+    setIsEditing(false);
+    setSelectedDetails(booking);
+    assignEditForm(booking);
+    setFieldErrors({}); 
+  }
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = () => {
+
+  }
 
   return (
     <>
@@ -257,6 +286,200 @@ export const BookingsPage = () => {
         exportable={true}
         exportFilename={getExportFilename("bookings")}
       />
+
+      <Modal open={editDetailsModalOpen} onClose={() => {setEditDetailsModalOpen(false); setIsEditing(false);}} size="lg">
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-2xl font-bold text-primary">
+              {isEditing ? "Edit Booking Details" : "Booking Details"}
+            </h2>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1 text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 hover:cursor-pointer"
+              >
+                <EditIcon className="w-4 h-4" /> Edit
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-secondary mb-6">
+            {isEditing ? "Update the details for this booking." : "Review booking information, schedule, and current status."}
+          </p>
+
+          <div className='flex justify-center items-center w-full mt-12 mb-3'>
+            <hr className='flex-1 text-secondary/30'/>
+            <span className='mx-5 uppercase text-[9px] text-secondary'>Court Details</span>
+            <hr className='flex-1 text-secondary/30'/>
+          </div>
+
+          <div>
+            <div className='grid grid-cols-1 md:grid-cols-2 md:gap-4'>
+              <div className='max-md:mt-3'>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booking ID</label>
+                <input 
+                  type="text" 
+                  name="bookingID" 
+                  value={selectedDetails.bookingID} readOnly={true} disabled={true}
+                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+              </div>
+              <div className='max-md:mt-3'>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booking Date</label>
+                <input 
+                  type="text" 
+                  name="bookingDate" 
+                  value={shortFormatReadableDate(selectedDetails.bookingDate)} readOnly={true} disabled={true}
+                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+              </div>
+
+              <div className='max-md:mt-3'>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Sport</label>
+                <input 
+                  type="text" 
+                  name="courtSport" 
+                  value={selectedDetails.courtSport} readOnly={true} disabled={true}
+                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+              </div>
+              <div className='max-md:mt-3'>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Label</label>
+                <input 
+                  type="text" 
+                  name="courtLabel" 
+                  value={selectedDetails.courtLabel} readOnly={true} disabled={true}
+                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+              </div>
+
+              <div className='max-md:mt-3'>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Total Payement</label>
+                <input 
+                  type="text" 
+                  name="computedTotal" 
+                  value={formatCurrency(selectedDetails.computedTotal)} readOnly={true} disabled={true}
+                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+              </div>
+              <div className='max-md:mt-3'>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booking Status</label>
+                <select name="bookingStatus" value={editForm.bookingStatus} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
+                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
+                  ${isEditing && fieldErrors.bookingStatus 
+                      ? "border-red-500 focus:ring-red-300" 
+                      : "border-gray-200 focus:ring-primary/30"
+                  }`}>
+                  <option value="">Select Status...</option>
+                  <option value="pending">Pending</option>
+                  <option value="booked">Booked</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                {isEditing && fieldErrors.bookingStatus && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.bookingStatus} </span>)}
+              </div>
+              {selectedDetails.timeSlots && (() => {
+                const slots = selectedDetails.timeSlots.split(", ")
+                const start = slots[0];
+                const startTime = formatSlotTime(start);
+                const end = addOneHour(slots[slots.length-1]);
+                const endTime = formatSlotTime(end);
+                return (
+                    <>
+                        <div className='max-md:mt-3'>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Start Time</label>
+                            <input
+                                type="text"
+                                name="startTime"
+                                value={startTime}
+                                readOnly
+                                disabled
+                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                        </div>
+                        <div className='max-md:mt-3'>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">End Time</label>
+                            <input
+                                type="text"
+                                name="endTime"
+                                value={endTime}
+                                readOnly
+                                disabled
+                                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                        </div>
+                    </>
+                );
+            })()}
+              
+              
+            </div>
+            <div className='mt-3'>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booking Time Slots Selected</label>
+              <div className='w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30'>
+                {selectedDetails.timeSlots && selectedDetails.timeSlots.split(", ").map((slot) => {
+                  return (
+                    <button
+                      key={slot}
+                      className={`mx-1 py-1.5 px-5 rounded-xl text-sm font-semibold border transition-all duration-200 border-primary text-primary`}
+                    >
+                      {slot}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className='flex justify-center items-center w-full mt-3 mb-3'>
+            <hr className='flex-1 text-secondary/30'/>
+            <span className='mx-5 uppercase text-[9px] text-secondary'>Booker Details</span>
+            <hr className='flex-1 text-secondary/30'/>
+          </div>
+          <div>
+            <div className='mt-3'>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booker Full Name</label>
+              <input 
+                type="text" 
+                name="bookerFullName" 
+                value={editForm.bookerFullName} readOnly={!isEditing} disabled={!isEditing}
+                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+            </div>
+            <div className='mt-3'>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booker Contact Number</label>
+              <input 
+                type="text" 
+                name="bookerContactNumber" 
+                value={editForm.bookerContactNumber} readOnly={!isEditing} disabled={!isEditing}
+                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+            </div>
+            <div className='mt-3'>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booker Email</label>
+              <input 
+                type="text" 
+                name="bookerEmail" 
+                value={editForm.bookerEmail} readOnly={!isEditing} disabled={!isEditing}
+                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 flex justify-end gap-3">
+            {isEditing ? (
+              <>
+                <button onClick={() => {setIsEditing(false); assignEditForm(booking);; setFieldErrors({});}}
+                  className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer">
+                  Cancel
+                </button>
+                <button onClick={handleEditSubmit}
+                  className="px-5 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90 hover:cursor-pointer">
+                  Save Changes
+                </button>
+              </>
+            ):(
+              <button onClick={() => { setEditDetailsModalOpen(false); setIsEditing(false); }}
+                className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer">
+                Close
+              </button>
+            )}
+            
+          </div>
+        </div>
+      </Modal>
     </>
   )
 }

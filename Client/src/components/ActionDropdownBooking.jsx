@@ -11,8 +11,6 @@ export const ActionDropdownBooking = ({ row, onEdit, onConfirm, onComplete, onCa
     const canCancel = statusTransitionTo(status, 'cancelled');
     const canDelete = statusTransitionTo(status, 'deleted');
 
-    console.log("status:",status, "canEdit:", canEdit, "canCancel:", canCancel, "canDelete:", canDelete)
-
     if (!canEdit && !canConfirm && !canComplete && !canCancel && !canDelete) return null;
 
     const [open, setOpen] = useState(false);
