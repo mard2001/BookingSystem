@@ -84,7 +84,11 @@ export const DataTable = ({ data = [], columns = [], loading = false, error = nu
                         >
                             <span className="flex items-center justify-center gap-1">
                                 {flexRender(header.column.columnDef.header, header.getContext())}
-                                {{ asc: <ArrowUpZaIcon className="w-3.5 h-3.5" />, desc: <ArrowDownZaIcon className="w-3.5 h-3.5" /> }[header.column.getIsSorted()] ?? " ↕"}
+                                {
+                                    header.column.getCanSort() &&
+                                    ({ asc: <ArrowUpZaIcon className="w-3.5 h-3.5" />, desc: <ArrowDownZaIcon className="w-3.5 h-3.5" /> }[header.column.getIsSorted()] ?? " ↕")
+                                }
+
                             </span>
                         </th>
                     ))}

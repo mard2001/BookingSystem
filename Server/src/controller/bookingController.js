@@ -4,7 +4,7 @@ import { generateBookingID } from '../utils/codeGenerator.js';
 import * as response from '../utils/response.js';
 import 'dotenv/config';
 import { getDayType, getRateKey, getTimeType } from '../utils/valueFormats.js';
-import { validateFields } from '../utils/validateFields.js';
+import { validateFields, validateTransition } from '../utils/validateFields.js';
 
 
 export const getAvailableSlots = (req, res) => {
@@ -463,28 +463,51 @@ export const confirmBooking = async (req, res) => {
 export const updateBookingStatus = (req, res) => {
     const { bookingID } = req.params;
     const { status } = req.body;
+
     if (!bookingID) return response.badRequest(res, 'Booking ID is required.');
     if (!validateFields(req, res, ['status'])) return;
 
-    const validStatuses = ['pending', 'booked', 'cancelled', 'completed', 'rejected'];
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'rejected', 'deleted'];
     if (!validStatuses.includes(status)) return response.badRequest(res, 'Invalid status value.');
 
-    const checkqry = 'SELECT status FROM tbl_bookings WHERE bookingID = ?';
-
-    db.query(checkqry, [bookingID], (err, result) => {
+    // 1. Fetch current status
+    db.query('SELECT status FROM tbl_bookings WHERE bookingID = ?', [bookingID], (err, result) => {
         if (err) return response.serverError(res, 'Database error', err);
-        if (result.length == 0) return response.notFound(res, 'Specific booking not found');
-        
-        const updateqry = 'UPDATE tbl_bookings SET status = ?, updatedAt = ? WHERE bookingID = ?';
+        if (!result.length) return response.notFound(res, 'Booking not found.');
 
-        db.query(updateqry, [status, getCurrentTimestamp(), bookingID], (err, updatedData) => {
-            if (err) return response.serverError(res, 'Database error', err);
-            if (updatedData.affectedRows === 0) return response.badRequest(res, 'Failed to update booking.');
+        const currentStatus = result[0].status;
 
-            return response.ok(res, `Booking successfully updated to ${status}.`);
-        })
-    })
-}
+        // 2. Validate transition
+        if (!validateTransition(currentStatus, status)) {
+            return response.badRequest(res, `Invalid transition: ${currentStatus} → ${status}.`);
+        }
+
+        // 3. Determine slot status based on booking status
+        // const slotStatus = ['cancelled', 'rejected'].includes(status) ? 'available' : 'unavailable';
+        const now = getCurrentTimestamp();
+
+        // 4. Update both tables
+        db.query(
+            'UPDATE tbl_bookings SET status = ?, updatedAt = ? WHERE bookingID = ?',
+            [status, now, bookingID],
+            (errBooking, bookingResult) => {
+                if (errBooking) return response.serverError(res, 'Database error', errBooking);
+                if (!bookingResult.affectedRows) return response.badRequest(res, 'Failed to update booking.');
+
+                db.query(
+                    'UPDATE tbl_booking_slots SET status = ?, updatedAt = ? WHERE bookingID = ?',
+                    [status, now, bookingID],
+                    (errSlots, slotsResult) => {
+                        if (errSlots) return response.serverError(res, 'Database error', errSlots);
+                        if (!slotsResult.affectedRows) return response.badRequest(res, 'Failed to update booking slots.');
+
+                        return response.ok(res, `Booking successfully updated to ${status}.`);
+                    }
+                );
+            }
+        );
+    });
+};
 
 export const updateBookingBookerDetails = (req, res) => {
     if (!validateFields(req, res, [

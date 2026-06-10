@@ -82,10 +82,11 @@ export const BookingsPage = () => {
         const status = getValue();
 
         const statusMap = {
-          "confirmed": { label: "Confirmed", style: "bg-green-100 text-green-700" },
+          "booked": { label: "Booked", style: "bg-green-100 text-green-700" },
           "pending":   { label: "Pending",   style: "bg-yellow-100 text-yellow-700" },
           "cancelled": { label: "Cancelled", style: "bg-red-100 text-red-700" },
           "completed": { label: "Completed", style: "bg-blue-100 text-blue-700" },
+          "deleted": { label: "Deleted", style: "bg-gray-300 text-gray-700" },
         };
 
         const { label, style } = statusMap[status] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
@@ -191,14 +192,17 @@ export const BookingsPage = () => {
       ),
     },
     {
-      header: "Actions",
+      header: "",
       id: "actions",
+      enableSorting: false,
       cell: ({ row }) => (
         <ActionDropdownBooking
           row={row}
           onEdit={(data) => console.log("Edit", data)}
+          onConfirm={(data) => handleEditBookingStatus("booked", data)}
+          onComplete={(data) => handleEditBookingStatus("completed", data)}
           onCancel={(data) => handleEditBookingStatus("cancelled", data)}
-          onDelete={(data) => console.log("Delete", data)}
+          onDelete={(data) => handleEditBookingStatus("deleted", data)}
         />
       ),
     },
@@ -222,7 +226,6 @@ export const BookingsPage = () => {
 
   const handleEditBookingStatus = async (status, bookingData) => {
     try {
-      console.log()
       const editResponse = await updateBookingStatus(status, bookingData.bookingID);
       toast.success(editResponse.message);
     } catch (error) {

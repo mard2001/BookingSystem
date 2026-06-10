@@ -1,8 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreHorizontal, EditIcon, XCircle, Trash2Icon } from 'lucide-react';
+import { MoreHorizontal, EditIcon, XCircle, Trash2Icon, CheckCircle, CheckCheck } from 'lucide-react';
+import { statusTransitionTo } from '../utils/ValueValidate';
 
-export const ActionDropdownBooking = ({ row, onEdit, onCancel, onDelete }) => {
+export const ActionDropdownBooking = ({ row, onEdit, onConfirm, onComplete, onCancel, onDelete }) => {
+    const status = row.original.bookingStatus;
+    const canConfirm  = statusTransitionTo(status, 'booked');
+    const canComplete = statusTransitionTo(status, 'completed');
+    const canEdit   = statusTransitionTo(status, 'booked') || statusTransitionTo(status, 'completed');
+    const canCancel = statusTransitionTo(status, 'cancelled');
+    const canDelete = statusTransitionTo(status, 'deleted');
+
+    console.log("status:",status, "canEdit:", canEdit, "canCancel:", canCancel, "canDelete:", canDelete)
+
+    if (!canEdit && !canConfirm && !canComplete && !canCancel && !canDelete) return null;
+
     const [open, setOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const buttonRef = useRef(null);
@@ -68,31 +80,53 @@ export const ActionDropdownBooking = ({ row, onEdit, onCancel, onDelete }) => {
                     style={{ top: coords.top, left: coords.left }}
                     className="absolute w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[9999] overflow-hidden"
                 >
-                    <button
-                        onClick={() => { onEdit(row.original); setOpen(false); }}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
-                    >
-                        <EditIcon className="w-4 h-4 text-primary" />
-                        Edit Booking
-                    </button>
+                    {canEdit && (
+                        <button
+                            onClick={() => { onEdit(row.original); setOpen(false); }}
+                            className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                        >
+                            <EditIcon className="w-4 h-4 text-primary" />
+                            Edit Booking
+                        </button>
+                    )}
 
-                    <button
-                        onClick={() => { onCancel(row.original); setOpen(false); }}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-yellow-600 hover:bg-yellow-50 hover:cursor-pointer"
-                    >
-                        <XCircle className="w-4 h-4" />
-                        Cancel Booking
-                    </button>
+                    {canConfirm && (
+                        <button onClick={() => { onConfirm(row.original); setOpen(false); }}
+                            className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 hover:cursor-pointer">
+                            <CheckCircle className="w-4 h-4" />
+                            Confirm Booking
+                        </button>
+                    )}
 
-                    <div className="border-t border-gray-100" />
+                    {canComplete && (
+                        <button onClick={() => { onComplete(row.original); setOpen(false); }}
+                            className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 hover:cursor-pointer">
+                            <CheckCheck className="w-4 h-4" />
+                            Mark as Completed
+                        </button>
+                    )}
 
-                    <button
-                        onClick={() => { onDelete(row.original); setOpen(false); }}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:cursor-pointer"
-                    >
-                        <Trash2Icon className="w-4 h-4" />
-                        Delete Booking
-                    </button>
+                    {canCancel && (
+                        <button
+                            onClick={() => { onCancel(row.original); setOpen(false); }}
+                            className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-yellow-600 hover:bg-yellow-50 hover:cursor-pointer"
+                        >
+                            <XCircle className="w-4 h-4" />
+                            Cancel Booking
+                        </button>
+                    )}
+
+                    {canDelete && (<div className="border-t border-gray-100" />)}
+
+                    {canDelete && (
+                        <button
+                            onClick={() => { onDelete(row.original); setOpen(false); }}
+                            className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:cursor-pointer"
+                        >
+                            <Trash2Icon className="w-4 h-4" />
+                            Delete Booking
+                        </button>
+                    )}
                 </div>,
                 document.body
             )}

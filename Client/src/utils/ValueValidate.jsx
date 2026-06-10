@@ -28,3 +28,15 @@ export const validateForm = (form, rules) => {
 
     return errors; 
 };
+
+export const statusTransitionTo = (current, next) => {
+    const allowed = {
+        pending:   ['booked', 'cancelled', 'rejected', 'deleted'],
+        booked:    ['completed', 'cancelled', 'rejected', 'deleted'],
+        completed: [],
+        cancelled: ['deleted'],
+        rejected:  ['deleted'],
+    };
+
+    return allowed[current]?.includes(next) ?? false;
+};
