@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreHorizontal, EditIcon, XCircle, Trash2Icon, CheckCircle, CheckCheck } from 'lucide-react';
+import { MoreHorizontal, EditIcon, XCircle, Trash2Icon, CheckCircle, CheckCheck, EyeIcon } from 'lucide-react';
 import { statusTransitionTo } from '../utils/ValueValidate';
 
 export const ActionDropdownBooking = ({ row, onEdit, onConfirm, onComplete, onCancel, onDelete }) => {
     const status = row.original.bookingStatus;
     const canConfirm  = statusTransitionTo(status, 'booked');
     const canComplete = statusTransitionTo(status, 'completed');
-    const canEdit   = statusTransitionTo(status, 'booked') || statusTransitionTo(status, 'completed');
+    const canEdit   = true;
     const canCancel = statusTransitionTo(status, 'cancelled');
     const canDelete = statusTransitionTo(status, 'deleted');
 
@@ -83,8 +83,8 @@ export const ActionDropdownBooking = ({ row, onEdit, onConfirm, onComplete, onCa
                             onClick={() => { onEdit(row.original); setOpen(false); }}
                             className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
                         >
-                            <EditIcon className="w-4 h-4 text-primary" />
-                            Edit Booking
+                            <EyeIcon className="w-4 h-4 text-primary" />
+                            View Booking
                         </button>
                     )}
 

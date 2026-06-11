@@ -103,3 +103,18 @@ export  const updateBookingStatus = async(status, bookingID) => {
 
 }
 
+export  const updateBookingDetails = async(bookingDetails, bookingID) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/update/${bookingID}/booker-details`,{
+            bookerFullName : bookingDetails.bookerFullName,
+            bookerEmail : bookingDetails.bookerEmail,
+            bookerContactNumber : bookingDetails.bookerContactNumber,
+            status : bookingDetails.bookingStatus,
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+
+}
+

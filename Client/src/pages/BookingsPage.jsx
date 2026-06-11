@@ -5,11 +5,13 @@ import { useMemo } from 'react';
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { getExportFilename } from '../utils/ExportTable';
-import { getAllBookings, updateBookingStatus } from '../api/services/bookingService';
+import { getAllBookings, updateBookingDetails, updateBookingStatus } from '../api/services/bookingService';
 import { addOneHour, formatCurrency, formatSlotTime, getTimeRange, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
 import { toast } from 'sonner';
 import { Modal } from '../components/Modal';
+import { statusTransitionTo, validateForm } from '../utils/ValueValidate';
+import { editBookingRules } from '../Rules/BookingInputRules';
 
 export const BookingsPage = () => {
   const [data, setData] = useState([]);
@@ -216,6 +218,15 @@ export const BookingsPage = () => {
     },
   ], []);
 
+  const allStatuses = [
+    { value: "pending",   label: "Pending" },
+    { value: "booked",    label: "Booked" },
+    { value: "cancelled", label: "Cancelled" },
+    { value: "completed", label: "Completed" },
+    { value: "rejected",  label: "Rejected" },
+    { value: "deleted",   label: "Deleted" },
+  ];
+
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -259,8 +270,33 @@ export const BookingsPage = () => {
     setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEditSubmit = () => {
+  const handleEditSubmit = async () => {
+    const errors = validateForm(editForm, editBookingRules);
+    console.log(errors)
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors); 
+      return;
+    }
 
+    try {
+      const updateRes = await updateBookingDetails(editForm, selectedDetails.bookingID);
+      toast.success(updateRes.message);
+      setIsEditing(false);
+      setEditDetailsModalOpen(false);
+
+      // update row in-place, no refetch needed
+      setData(prev => prev.map(b =>
+        b.bookingID === selectedDetails.bookingID
+          ? { ...b, ...editForm }
+          : b
+      ));
+    } catch (error) {
+      toast.error(error.message);
+      if (error.errors?.missing) {
+        const errors = Object.fromEntries(error.errors.missing.map(f => [f, "This field is required."]));
+        setFieldErrors(errors);
+      }
+    }
   }
 
   return (
@@ -293,7 +329,7 @@ export const BookingsPage = () => {
             <h2 className="text-2xl font-bold text-primary">
               {isEditing ? "Edit Booking Details" : "Booking Details"}
             </h2>
-            {!isEditing && (
+            {!isEditing && ['pending', 'booked'].includes(selectedDetails.bookingStatus) && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center gap-1 text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 hover:cursor-pointer"
@@ -358,18 +394,25 @@ export const BookingsPage = () => {
               </div>
               <div className='max-md:mt-3'>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booking Status</label>
-                <select name="bookingStatus" value={editForm.bookingStatus} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
-                  className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                  ${isEditing && fieldErrors.bookingStatus 
-                      ? "border-red-500 focus:ring-red-300" 
+                <select
+                  name="bookingStatus"
+                  value={editForm.bookingStatus}
+                  onChange={handleEditChange}
+                  disabled={!isEditing}
+                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2
+                    ${isEditing && fieldErrors.bookingStatus
+                      ? "border-red-500 focus:ring-red-300"
                       : "border-gray-200 focus:ring-primary/30"
-                  }`}>
-                  <option value="">Select Status...</option>
-                  <option value="pending">Pending</option>
-                  <option value="booked">Booked</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
+                    }`}
+                >
+                  <option value={selectedDetails.bookingStatus}>
+                    {allStatuses.find(s => s.value === selectedDetails.bookingStatus)?.label ?? selectedDetails.bookingStatus}
+                  </option>
+                  {allStatuses.filter(s => statusTransitionTo(selectedDetails.bookingStatus, s.value))
+                    .map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))
+                  }
                 </select>
                 {isEditing && fieldErrors.bookingStatus && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.bookingStatus} </span>)}
               </div>
@@ -437,31 +480,51 @@ export const BookingsPage = () => {
               <input 
                 type="text" 
                 name="bookerFullName" 
-                value={editForm.bookerFullName} readOnly={!isEditing} disabled={!isEditing}
-                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+                value={editForm.bookerFullName} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
+                className={`w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2
+                  ${isEditing && fieldErrors.bookerFullName
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-200 focus:ring-primary/30"
+                  }`} />
             </div>
+            {isEditing && fieldErrors.bookerFullName && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.bookerFullName} </span>)}
             <div className='mt-3'>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booker Contact Number</label>
               <input 
                 type="text" 
                 name="bookerContactNumber" 
-                value={editForm.bookerContactNumber} readOnly={!isEditing} disabled={!isEditing}
-                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+                maxLength={11}
+                onKeyDown={(e) => {
+                  const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"]
+                  if (!/^\d$/.test(e.key) && !allowed.includes(e.key)) e.preventDefault()
+                }}
+                value={editForm.bookerContactNumber} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
+                className={`w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2
+                  ${isEditing && fieldErrors.bookerContactNumber
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-200 focus:ring-primary/30"
+                  }`} />
             </div>
+            {isEditing && fieldErrors.bookerContactNumber && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.bookerContactNumber} </span>)}
             <div className='mt-3'>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Booker Email</label>
               <input 
                 type="text" 
                 name="bookerEmail" 
-                value={editForm.bookerEmail} readOnly={!isEditing} disabled={!isEditing}
-                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30`} />
+                value={editForm.bookerEmail} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
+                className={`w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2
+                  ${isEditing && fieldErrors.bookerEmail
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-200 focus:ring-primary/30"
+                  }`} />
             </div>
+            {isEditing && fieldErrors.bookerEmail && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.bookerEmail} </span>)}
           </div>
 
           <div className="border-t border-gray-100 pt-4 flex justify-end gap-3">
             {isEditing ? (
               <>
-                <button onClick={() => {setIsEditing(false); assignEditForm(booking);; setFieldErrors({});}}
+                <button onClick={() => {setIsEditing(false); assignEditForm(selectedDetails); setFieldErrors({});}}
                   className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer">
                   Cancel
                 </button>

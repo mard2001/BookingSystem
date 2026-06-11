@@ -467,7 +467,7 @@ export const updateBookingStatus = (req, res) => {
     if (!bookingID) return response.badRequest(res, 'Booking ID is required.');
     if (!validateFields(req, res, ['status'])) return;
 
-    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'rejected', 'deleted'];
+    const validStatuses = ['pending', 'booked', 'cancelled', 'completed', 'rejected', 'deleted'];
     if (!validStatuses.includes(status)) return response.badRequest(res, 'Invalid status value.');
 
     // 1. Fetch current status
@@ -511,21 +511,24 @@ export const updateBookingStatus = (req, res) => {
 
 export const updateBookingBookerDetails = (req, res) => {
     if (!validateFields(req, res, [
-        'bookerFullName', 'bookerEmail', 'bookerContactNumber'
+        'bookerFullName', 'bookerEmail', 'bookerContactNumber', 'status'
     ])) return;
 
     if (!req.params.bookingID) return response.badRequest(res, "Booking ID is required.");
     
     const { bookingID } = req.params;
-    const { bookerFullName, bookerEmail, bookerContactNumber } = req.body;
+    const { bookerFullName, bookerEmail, bookerContactNumber, status } = req.body;
+
+    const validStatuses = ['pending', 'booked', 'cancelled', 'completed', 'rejected', 'deleted'];
+    if (!validStatuses.includes(status)) return response.badRequest(res, 'Invalid status value.');
 
     const updatequery = `
         UPDATE tbl_bookings 
-        SET bookerFullName = ?, bookerEmail = ?, bookerContactNumber = ?, updatedAt = ?
+        SET bookerFullName = ?, bookerEmail = ?, bookerContactNumber = ?, status = ?, updatedAt = ?
         WHERE bookingID = ?
     `;
 
-    const values = [bookerFullName, bookerEmail, bookerContactNumber, getCurrentTimestamp(), bookingID];
+    const values = [bookerFullName, bookerEmail, bookerContactNumber, status, getCurrentTimestamp(), bookingID];
 
     db.query(updatequery, values, (err, result) => {
         if (err) return response.serverError(res, "Database error.", err);
