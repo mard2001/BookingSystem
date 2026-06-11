@@ -5,7 +5,7 @@ import { statusTransitionTo } from '../utils/ValueValidate';
 
 export const ActionDropdownBooking = ({ row, onEdit, onConfirm, onComplete, onCancel, onDelete }) => {
     const status = row.original.bookingStatus;
-    const canConfirm  = statusTransitionTo(status, 'booked');
+    const canConfirm  = statusTransitionTo(status, 'confirmed');
     const canComplete = statusTransitionTo(status, 'completed');
     const canEdit   = true;
     const canCancel = statusTransitionTo(status, 'cancelled');

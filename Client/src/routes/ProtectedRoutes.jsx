@@ -8,6 +8,7 @@ import { CustomersPage } from '../pages/CustomersPage'
 import { BookingsCalendarPage } from '../pages/BookingsCalendarPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { ADMIN_ROLES, ALL_ROLES } from '../constants/contants'
+import { ClosurePage } from '../pages/ClosurePage'
 
 export const ProtectedRoutes = [
     {
@@ -73,6 +74,18 @@ export const ProtectedRoutes = [
             <ProtectedRouteChecker allowedRoles={ALL_ROLES}>
                 <MainLayout>
                     <ProfilePage />
+                </MainLayout>
+            </ProtectedRouteChecker>
+        )
+    },
+
+    {
+        key:"ClosurePage",
+        path: "/settings/closures",
+        element:(
+            <ProtectedRouteChecker allowedRoles={ADMIN_ROLES}>
+                <MainLayout>
+                    <ClosurePage />
                 </MainLayout>
             </ProtectedRouteChecker>
         )

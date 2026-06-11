@@ -346,8 +346,8 @@ export const CustomersPage = () => {
   const handleRegisterUser = async () => {
     const errors = validateForm(newUser, userCreateRules);
     if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors); 
-        return;
+      setFieldErrors(errors); 
+      return;
     }
 
     const isCustomer = newUser.role.toUpperCase() === 'CUSTOMER'; // ✅ define it here
@@ -683,11 +683,11 @@ export const CustomersPage = () => {
                 <button 
                     onClick={handleRegisterUser}
                     type="button" 
-                    className='w-full rounded-2xl h-15 flex justify-center items-center space-x-4 bg-primary text-white shadow-sm hover:shadow-lg hover:bg-primary/90 hover:cursor-pointer'>
+                    className='w-full rounded-2xl h-12 flex justify-center items-center space-x-4 bg-primary text-white shadow-sm hover:shadow-lg hover:bg-primary/90 hover:cursor-pointer'>
                     Add New User <ArrowRight size={20} />
                 </button>
             </div>
-            </div>
+          </div>
       </Modal>
 
       <Modal open={modalOpen} onClose={()=> { setModalOpen(false) }} size="md">

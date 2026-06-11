@@ -11,7 +11,7 @@ bookingRouter.get('/get/availableslots/:courtID/slots', getAvailableSlots);
 bookingRouter.get('/get/upcoming/:userID', getUpcomingBookings);
 bookingRouter.get('/get/previous/:userID', getHistoricalBookings);
 bookingRouter.post('/check/availability', checkAvailability);
-bookingRouter.post('/confirmbooking', authenticate, confirmBooking);
+bookingRouter.post('/confirmbooking', confirmBooking);
 bookingRouter.put('/update/:bookingID/status', updateBookingStatus);
 bookingRouter.put('/update/:bookingID/booker-details', updateBookingBookerDetails);
 

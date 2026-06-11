@@ -41,6 +41,9 @@
     --sx-color-primary-container: var(--color-primary-lighter);
     --sx-color-on-primary: #ffffff;
   }
+  #calendarClosureMainDiv .sx__date-input {
+    display: none !important;
+}
 
   html {
     scroll-behavior: smooth;

@@ -70,12 +70,12 @@ export const ProfilePage = () => {
             accessorKey: "bookingStatus",
             cell: ({ getValue }) => {
                 const status = getValue();
-
                 const statusMap = {
                     "confirmed": { label: "Confirmed", style: "bg-green-100 text-green-700" },
                     "pending":   { label: "Pending",   style: "bg-yellow-100 text-yellow-700" },
                     "cancelled": { label: "Cancelled", style: "bg-red-100 text-red-700" },
                     "completed": { label: "Completed", style: "bg-blue-100 text-blue-700" },
+                    "deleted": { label: "Deleted", style: "bg-gray-300 text-gray-700" },
                 };
 
                 const { label, style } = statusMap[status] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
@@ -249,6 +249,7 @@ export const ProfilePage = () => {
                                         "pending":   { label: "Pending",   style: "bg-yellow-100 text-yellow-700" },
                                         "cancelled": { label: "Cancelled", style: "bg-red-100 text-red-700" },
                                         "completed": { label: "Completed", style: "bg-blue-100 text-blue-700" },
+                                        "deleted": { label: "Deleted", style: "bg-gray-300 text-gray-700" },
                                     };
                                     const { label, style } = statusMap[upcomingBooking.bookingStatus] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
 

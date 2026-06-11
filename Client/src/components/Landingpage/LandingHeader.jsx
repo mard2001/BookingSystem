@@ -58,7 +58,7 @@ export const LandingHeader = () => {
 
                 {/* Nav Links — center */}
                 <ul className="hidden md:flex items-center gap-8">
-                {['Courts', 'Features', 'Pricing', 'Reservation'].map((link) => (
+                {['Features', 'Courts', 'Pricing', 'Reservation'].map((link) => (
                     <li key={link}>
                     
                     <a href={`#${link.toLowerCase()}`}
@@ -163,7 +163,7 @@ export const LandingHeader = () => {
                 menuOpen ? 'opacity-100' : 'max-h-0 opacity-0'
             }`}>
                 <div className="bg-[#005c9d]/95 backdrop-blur-md border-t border-white/10 px-6 py-4 flex flex-col gap-4">
-                    {['Courts', 'Features', 'Pricing', 'Reservation'].map((link) => (
+                    {['Features', 'Courts', 'Pricing', 'Reservation'].map((link) => (
                         <a
                             key={link}
                             href={`#${link.toLowerCase()}`}

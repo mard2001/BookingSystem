@@ -8,3 +8,13 @@ export const addCourtRules = {
     rate3: { required: true, }, 
     rate4: { required: true, },
 }
+
+export const closureCreateRules = {
+    type: { required: true },
+    reason: { required: true },
+    blackoutDateStart: { required: true },
+    blackoutDateEnd: { required: true },
+    scope: { required: true },
+    courtID: { required: true },
+    remarks: { required: false },
+}

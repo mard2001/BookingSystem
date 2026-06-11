@@ -31,8 +31,8 @@ export const validateForm = (form, rules) => {
 
 export const statusTransitionTo = (current, next) => {
     const allowed = {
-        pending:   ['booked', 'cancelled', 'rejected', 'deleted'],
-        booked:    ['completed', 'cancelled', 'rejected', 'deleted'],
+        pending:   ['confirmed', 'cancelled', 'rejected', 'deleted'],
+        confirmed:  ['completed', 'cancelled', 'rejected', 'deleted'],
         completed: [],
         cancelled: ['deleted'],
         rejected:  ['deleted'],

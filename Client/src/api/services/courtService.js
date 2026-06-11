@@ -15,7 +15,7 @@ export async function getCourts() {
 export async function getAvailableCourts() {
     try {
         const response = await api.get("/api/v1/courts/getall/available");
-        return response.data;
+        return response;
     } catch (error) {
         console.error("Get courts failed:", error);
 

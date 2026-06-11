@@ -1,5 +1,5 @@
 import React from 'react'
-import CalendarApp from '../components/Calendar'
+import CalendarBookingApp from '../components/Calendars/CalendarBookings'
 import { useState } from 'react'
 import { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -16,7 +16,7 @@ export const BookingsCalendarPage = () => {
                     </div>
                 </div>
                 <div className='bg-white/70 rounded-xl overflow-hidden mt-10 shadow-xl'>
-                    <CalendarApp />
+                    <CalendarBookingApp />
                 </div>
             </div>
         </>

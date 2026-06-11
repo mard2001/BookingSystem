@@ -11,8 +11,8 @@ export const validateFields = (req, res, fields) => {
 
 export const validateTransition = (current, next) => {
     const allowed = {
-        pending:   ['booked', 'cancelled', 'rejected', 'deleted'],
-        booked: ['completed', 'cancelled', 'rejected', 'deleted'],
+        pending:   ['confirmed', 'cancelled', 'rejected', 'deleted'],
+        confirmed: ['completed', 'cancelled', 'rejected', 'deleted'],
         completed: [],
         cancelled: ['deleted'],
         rejected:  ['deleted']

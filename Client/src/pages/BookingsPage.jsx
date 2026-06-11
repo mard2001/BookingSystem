@@ -92,7 +92,7 @@ export const BookingsPage = () => {
         const status = getValue();
 
         const statusMap = {
-          "booked": { label: "Booked", style: "bg-green-100 text-green-700" },
+          "confirmed": { label: "Confirmed", style: "bg-green-100 text-green-700" },
           "pending":   { label: "Pending",   style: "bg-yellow-100 text-yellow-700" },
           "cancelled": { label: "Cancelled", style: "bg-red-100 text-red-700" },
           "completed": { label: "Completed", style: "bg-blue-100 text-blue-700" },
@@ -209,7 +209,7 @@ export const BookingsPage = () => {
         <ActionDropdownBooking
           row={row}
           onEdit={(data) => {handleEditModal(data)}}
-          onConfirm={(data) => handleEditBookingStatus("booked", data)}
+          onConfirm={(data) => handleEditBookingStatus("confirmed", data)}
           onComplete={(data) => handleEditBookingStatus("completed", data)}
           onCancel={(data) => handleEditBookingStatus("cancelled", data)}
           onDelete={(data) => handleEditBookingStatus("deleted", data)}
@@ -220,7 +220,7 @@ export const BookingsPage = () => {
 
   const allStatuses = [
     { value: "pending",   label: "Pending" },
-    { value: "booked",    label: "Booked" },
+    { value: "confirmed",    label: "Confirmed" },
     { value: "cancelled", label: "Cancelled" },
     { value: "completed", label: "Completed" },
     { value: "rejected",  label: "Rejected" },
@@ -329,7 +329,7 @@ export const BookingsPage = () => {
             <h2 className="text-2xl font-bold text-primary">
               {isEditing ? "Edit Booking Details" : "Booking Details"}
             </h2>
-            {!isEditing && ['pending', 'booked'].includes(selectedDetails.bookingStatus) && (
+            {!isEditing && ['pending', 'confirmed'].includes(selectedDetails.bookingStatus) && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center gap-1 text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 hover:cursor-pointer"
@@ -459,7 +459,7 @@ export const BookingsPage = () => {
                   return (
                     <button
                       key={slot}
-                      className={`mx-1 py-1.5 px-5 rounded-xl text-sm font-semibold border transition-all duration-200 border-primary text-primary`}
+                      className={`mx-1 my-1 py-1.5 px-5 rounded-xl text-sm font-semibold border transition-all duration-200 border-primary text-primary`}
                     >
                       {slot}
                     </button>

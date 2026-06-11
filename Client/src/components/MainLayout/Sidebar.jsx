@@ -2,7 +2,7 @@ import React from 'react'
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getStoredUser } from '../../utils/LocalVariables';
-import { BarChart, CalendarDaysIcon, ChevronDown, ChevronLeft, ChevronRight, LayoutDashboard, LogOutIcon, MapPin, MenuIcon, Settings, UserCircle2, Users, X } from 'lucide-react';
+import { BarChart, CalendarDaysIcon, ChevronDown, ChevronLeft, ChevronRight, LayoutDashboard, LogOutIcon, MapPin, MenuIcon, Settings, SettingsIcon, UserCircle2, Users, X } from 'lucide-react';
 import { getDecryptedRole } from '../../utils/Crypto';
 import { useAuth } from '../../context/AuthContext';
 
@@ -42,7 +42,7 @@ export const Sidebar = () => {
         // { label: "Walk-ins", path: "/bookings/walkins" },
       ]
     },
-    { label: "Courts", icon: MapPin, path: "/Courts", roles: ["superadmin", "admin", "staff"] },
+    { label: "Courts", icon: MapPin, path: "/courts", roles: ["superadmin", "admin", "staff"] },
     // {
     //   label: "Courts", icon: MapPin, path: "/courts", roles: ["admin", "staff"],
     //   children: [
@@ -52,7 +52,14 @@ export const Sidebar = () => {
     // },
     { label: "Users", icon: Users, path: "/customers", roles: ["superadmin", "admin"] },
     { label: "My Profile", icon: UserCircle2, path: "/profile", roles: ["superadmin", "admin", "customer"] },
-    // { label: "Settings", icon: Settings, path: "/settings", roles: ["superadmin", "admin"] },
+    {
+      label: "Settings", icon: SettingsIcon, path: "/settings/closures", roles: ["superadmin", "admin"],
+      children: [
+        { label: "Court Closures", path: "/settings/closures" },
+        // { label: "Calendar View", path: "/bookings/calendar" },
+        // { label: "Walk-ins", path: "/bookings/walkins" },
+      ]
+    },
   ];
 
   const visibleNavItems = navItems.filter(item => item.roles.includes(role));

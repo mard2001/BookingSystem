@@ -14,11 +14,11 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import { useRef } from 'react'
 import { toast } from 'sonner'
-import { getBookingsCalendarData } from '../api/services/bookingService'
-import { formatBookingEndDateTime, formatBookingStartDateTime } from '../utils/ValueFormat'
+import { getBookingsCalendarData } from '../../api/services/bookingService'
+import { formatBookingEndDateTime, formatBookingStartDateTime } from '../../utils/ValueFormat'
 
 
-function CalendarApp() {
+function CalendarBookingApp() {
     const eventsService = useState(() => createEventsServicePlugin())[0];
     const eventModal = useState(() => createEventModalPlugin())[0];
     const [calendarData, setCalendarData] = useState([]);
@@ -32,12 +32,12 @@ function CalendarApp() {
     })
 
     const isRangeAlreadyFetched = (start, end) => {
-        if (!start || !end) return false; // 👈 guard against undefined
-        if (fetchedRanges.current.length === 0) return false; // 👈 skip if cache is empty
+        if (!start || !end) return false;  
+        if (fetchedRanges.current.length === 0) return false; 
 
         const FIVE_MINUTES = 5 * 60 * 1000;
         return fetchedRanges.current.some(range => 
-            range.start && range.end &&  // 👈 guard each cached range too
+            range.start && range.end &&  
             range.start <= start && 
             range.end >= end &&
             Date.now() - range.fetchedAt < FIVE_MINUTES
@@ -102,4 +102,4 @@ function CalendarApp() {
     )
 }
  
-export default CalendarApp
+export default CalendarBookingApp

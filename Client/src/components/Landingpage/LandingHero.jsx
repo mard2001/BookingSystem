@@ -4,7 +4,7 @@ import { LandingCards } from './LandingCards'
 
 const LandingHero = () => {
   return (
-    <div className='relative mb-20'>
+    <div id="features" className='relative mb-20'>
       {/* Hero Image Section */}
       <div className='heroLandingImage h-[70vh] flex flex-col justify-center'>
         <div className='px-10 md:pl-30 mt-25'>
@@ -21,7 +21,7 @@ const LandingHero = () => {
             Book your schedule today.
           </p>
         </div>
-        <div id="features" className='px-10 md:pl-30 mt-5 mb-10'>
+        <div className='px-10 md:pl-30 mt-5 mb-10'>
           <button className="
             relative overflow-hidden
             bg-white text-[#005c9d]

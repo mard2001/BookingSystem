@@ -25,7 +25,7 @@ export const getAvailableSlots = (req, res) => {
             WHERE b.courtID = ?
             AND b.bookingDate = ?
             AND b.status NOT IN ('cancelled')
-            AND bs.status = 'booked'
+            AND bs.status = 'confirmed'
         ) AS booked ON booked.slotTime = ts.slotTime
         WHERE ts.courtID = ? AND ts.isActive = 1
         ORDER BY ts.slotTime ASC
@@ -55,7 +55,7 @@ export const checkAvailability = (req, res) => {
         WHERE b.courtID = ?
           AND b.bookingDate = ?
           AND bs.slotTime IN (${placeholders})
-          AND bs.status = 'booked'
+          AND bs.status = 'confirmed'
           AND b.status NOT IN ('cancelled')
     `;
 
@@ -146,7 +146,8 @@ export const getCalendarBookings = (req, res) => {
         FROM tbl_bookings b
         LEFT JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
         JOIN tbl_courts c ON b.courtID = c.courtID
-        WHERE b.bookingDate BETWEEN ? AND ?  
+        WHERE b.bookingDate BETWEEN ? AND ?
+        AND b.status IN ('confirmed', 'completed')
         GROUP BY 
             b.bookingID,
             b.accountID,
@@ -301,7 +302,7 @@ export const confirmBooking2 = (req, res) => {
             WHERE b.courtID = ?
               AND b.bookingDate = ?
               AND bs.slotTime IN (${placeholders})
-              AND bs.status = 'booked'
+              AND bs.status = 'confirmed'
               AND b.status NOT IN ('cancelled')
         `;
 
@@ -335,7 +336,7 @@ export const confirmBooking2 = (req, res) => {
 
                     const insertBookingQuery = `
                         INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'booked', ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
                     `;
 
                     db.query(insertBookingQuery, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()], (err, result) => {
@@ -344,7 +345,7 @@ export const confirmBooking2 = (req, res) => {
                         const newBookingID = result.insertId;
                         if (!newBookingID) return db.rollback(() => response.serverError(res, 'Database error', err));
 
-                        const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'booked',getCurrentTimestamp(), getCurrentTimestamp()]);
+                        const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'confirmed',getCurrentTimestamp(), getCurrentTimestamp()]);
 
                         db.query(
                             `INSERT INTO tbl_booking_slots (bookingID, slotTime, rateApplied, status, updatedAt, createdAt) VALUES ?`,
@@ -367,7 +368,7 @@ export const confirmBooking2 = (req, res) => {
 
 export const confirmBooking = async (req, res) => {
     const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
-    const accountID = req.user.id;
+    const accountID = req.user?.id ?? -1;
 
     if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
         return response.badRequest(res, 'Missing required fields');
@@ -405,7 +406,7 @@ export const confirmBooking = async (req, res) => {
             WHERE b.courtID = ?
               AND b.bookingDate = ?
               AND bs.slotTime IN (${placeholders})
-              AND bs.status = 'booked'
+              AND bs.status = 'confirmed'
               AND b.status NOT IN ('cancelled')
         `, [courtID, bookingDate, ...slotTimes]);
 
@@ -439,11 +440,11 @@ export const confirmBooking = async (req, res) => {
         // insert booking header
         await query(`
             INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'booked', ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
         `, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()]);
 
         // insert slots
-        const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'booked', getCurrentTimestamp(), getCurrentTimestamp()]);
+        const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'confirmed', getCurrentTimestamp(), getCurrentTimestamp()]);
         await query(
             `INSERT INTO tbl_booking_slots (bookingID, slotTime, rateApplied, status, updatedAt, createdAt) VALUES ?`,
             [slotValues]
@@ -467,7 +468,7 @@ export const updateBookingStatus = (req, res) => {
     if (!bookingID) return response.badRequest(res, 'Booking ID is required.');
     if (!validateFields(req, res, ['status'])) return;
 
-    const validStatuses = ['pending', 'booked', 'cancelled', 'completed', 'rejected', 'deleted'];
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'rejected', 'deleted'];
     if (!validStatuses.includes(status)) return response.badRequest(res, 'Invalid status value.');
 
     // 1. Fetch current status
@@ -519,7 +520,7 @@ export const updateBookingBookerDetails = (req, res) => {
     const { bookingID } = req.params;
     const { bookerFullName, bookerEmail, bookerContactNumber, status } = req.body;
 
-    const validStatuses = ['pending', 'booked', 'cancelled', 'completed', 'rejected', 'deleted'];
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'rejected', 'deleted'];
     if (!validStatuses.includes(status)) return response.badRequest(res, 'Invalid status value.');
 
     const updatequery = `
