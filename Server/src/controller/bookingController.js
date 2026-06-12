@@ -16,7 +16,16 @@ export const getAvailableSlots = (req, res) => {
     const query = `
         SELECT 
             ts.slotTime,
-            CASE WHEN booked.slotTime IS NOT NULL THEN 0 ELSE 1 END AS isAvailable
+            CASE 
+                WHEN booked.slotTime IS NOT NULL THEN 0
+                WHEN blackout.id IS NOT NULL THEN 0
+                ELSE 1 
+            END AS isAvailable,
+            CASE
+                WHEN booked.slotTime IS NOT NULL THEN 'booked'
+                WHEN blackout.id IS NOT NULL THEN 'blackout'
+                ELSE 'available'
+            END AS unavailableReason
         FROM tbl_time_slots ts
         LEFT JOIN (
             SELECT bs.slotTime
@@ -27,13 +36,18 @@ export const getAvailableSlots = (req, res) => {
             AND b.status NOT IN ('cancelled')
             AND bs.status = 'confirmed'
         ) AS booked ON booked.slotTime = ts.slotTime
+        LEFT JOIN tbl_blackout_dates blackout
+            ON blackout.isActive = 1
+            AND ? BETWEEN DATE(blackout.blackoutDateStart) AND DATE(blackout.blackoutDateEnd)
+            AND (
+                blackout.scope = 'all'
+                OR FIND_IN_SET(?, blackout.courtID)
+            )
         WHERE ts.courtID = ? AND ts.isActive = 1
         ORDER BY ts.slotTime ASC
     `;
 
-
-
-    db.query(query, [courtID, date, courtID], (err, results) => {
+    db.query(query, [courtID, date, date, courtID, courtID], (err, results) => {
         if (err) return response.serverError(res, 'Database error', err);
 
         return response.ok(res, 'Slots fetched successfully', results);
