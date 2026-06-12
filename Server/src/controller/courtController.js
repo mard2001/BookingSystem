@@ -195,7 +195,18 @@ export const getAllClosure = (req, res) => {
     
     const query = `
         SELECT 
-            bd.*,
+            bd.id,
+            bd.type,
+            bd.reason,
+            bd.scope,
+            bd.courtID,
+            bd.remarks,
+            bd.isActive,
+            bd.createdBy,
+            bd.blackoutDateStart,
+            bd.blackoutDateEnd,
+            bd.createdAt,
+            bd.updatedAt,
             GROUP_CONCAT(c.courtID ORDER BY c.courtID SEPARATOR '||') AS courtIDs,
             GROUP_CONCAT(c.courtLabel ORDER BY c.courtID SEPARATOR '||') AS courtLabels,
             GROUP_CONCAT(c.courtSport ORDER BY c.courtID SEPARATOR '||') AS courtSports
@@ -203,7 +214,19 @@ export const getAllClosure = (req, res) => {
         LEFT JOIN tbl_courts c 
             ON FIND_IN_SET(c.courtID, bd.courtID)
         WHERE bd.isActive != 0
-        GROUP BY bd.id
+        GROUP BY 
+            bd.id,
+            bd.type,
+            bd.reason,
+            bd.scope,
+            bd.courtID,
+            bd.remarks,
+            bd.isActive,
+            bd.createdBy,
+            bd.blackoutDateStart,
+            bd.blackoutDateEnd,
+            bd.createdAt,
+            bd.updatedAt
     `;
 
     db.query(query, (err, data) => {
