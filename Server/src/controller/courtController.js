@@ -189,3 +189,79 @@ export const deleteCourt = (req, res) => {
 
 }  
 
+// COURT CLOSURE
+
+export const getAllClosure = (req, res) => {
+    
+    const query = `
+        SELECT 
+            bd.*,
+            GROUP_CONCAT(c.courtID ORDER BY c.courtID SEPARATOR '||') AS courtIDs,
+            GROUP_CONCAT(c.courtLabel ORDER BY c.courtID SEPARATOR '||') AS courtLabels,
+            GROUP_CONCAT(c.courtSport ORDER BY c.courtID SEPARATOR '||') AS courtSports
+        FROM tbl_blackout_dates bd
+        LEFT JOIN tbl_courts c 
+            ON FIND_IN_SET(c.courtID, bd.courtID)
+        WHERE bd.isActive != 0
+        GROUP BY bd.id
+    `;
+
+    db.query(query, (err, data) => {
+        if(err) return response.serverError(res, "Database error", err);
+
+        const parsed = data.map(({ courtIDs, courtLabels, courtSports, ...row }) => ({
+            ...row,
+            courts: courtIDs
+                ? courtIDs.split('||').map((id, i) => ({
+                    courtID: id,
+                    courtLabel: courtLabels.split('||')[i],
+                    courtSport: courtSports.split('||')[i],
+                }))
+                : [],
+        }));
+
+        return (parsed.length > 0) ?
+            response.ok(res, 'All courts closure successfully retrieved.', parsed) :
+            response.ok(res, 'No courts closure found', []);
+    });
+};
+
+export const createNewClosure = (req, res) => {
+    if (!validateFields(req, res, [
+        'reason', 'type', 'blackoutDateStart', 'blackoutDateEnd', 'scope', 'courtID', 'createdBy'
+    ])) return;
+    
+    const { reason, type, blackoutDateStart, blackoutDateEnd, scope, courtID, remarks, createdBy } = req.body;
+
+    const query = `
+        INSERT INTO tbl_blackout_dates (reason, type, blackoutDateStart, blackoutDateEnd, scope, courtID, remarks, isActive, createdBy, updatedAt, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [reason, type, blackoutDateStart, blackoutDateEnd, scope, courtID, remarks?? "", 1, createdBy, getCurrentTimestamp(), getCurrentTimestamp()];
+
+    db.query(query, values, (err, result) => {
+        if (err) return response.serverError(res, 'Database error', err);
+        if (result.length > 0) return response.conflict(res, 'Insertion of court closure failed');
+        
+        return response.ok(res, "Court closure added successfully.", {
+            ...req.body
+        });
+    });
+};
+
+export const deleteClosure = (req, res) => {
+    const { closureID } = req.params;
+
+    if(!closureID) return response.badRequest(res, "Closure ID not being passed.");
+
+    const query = `UPDATE tbl_blackout_dates SET isActive = 0, updatedAt = ? WHERE id = ?`;
+
+    db.query(query, [getCurrentTimestamp(), closureID], (err, result) => {
+        if (err) return response.serverError(res, 'Database error', err);
+        if (result.length > 0) return response.conflict(res, 'Deletion of court closure failed');
+
+        return response.ok(res, "Court closure deleted successfully.", result);
+    })
+
+}  

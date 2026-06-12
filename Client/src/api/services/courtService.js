@@ -100,3 +100,35 @@ export async function deleteCourt(courtID) {
         throw error;
     }
 }
+
+// CLOSURE FUNCTIONS
+
+export async function getAllClosure() {
+    try {
+        const response = await api.get("/api/v1/courts/getall-closure");
+        return response;
+    } catch (error) {
+        console.error("Get court closures failed:", error);
+        throw error;
+    }
+}
+
+export async function addCourtClosure(details) {
+    try {
+        const response = await api.post("/api/v1/courts/add/new-closure", details);
+        return response;
+    } catch (error) {
+        console.error("Add court failed:", error);
+        throw error;
+    }
+}
+
+export async function deleteClosure(closureID) {
+    try {
+        const response = await api.put(`/api/v1/courts/delete-closure/${closureID}`);
+        return response;
+    } catch (error) {
+        console.error("Deletion of court closure failed:", error);
+        throw error;
+    }
+}
