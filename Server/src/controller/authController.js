@@ -195,12 +195,11 @@ export const login = (req, res) => {
 
         if(!isPasswordValid) return response.conflict(res, 'Password does not match.');
 
-        const { accessToken, refreshToken } = generateTokens(data[0]);
+        const { accessToken, refreshToken, expiresAt } = generateTokens(data[0]);
     
         // db.query('DELETE FROM tbl_refresh_tokens WHERE user_id = ?', [data[0].id], (errDel) => {
         //     if (errDel) return response.serverError(res, 'Database error', errDel);
 
-            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
             const insertToken = 'INSERT INTO tbl_refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)';
 
             db.query(insertToken, [data[0].id, refreshToken, expiresAt],(errToken, dataToken) => {
@@ -239,8 +238,7 @@ export const refresh = (req, res) => {
             if (errDelete) return response.serverError(res, 'Database error', errDelete);
 
             // 4. Issue new token pair
-            const { accessToken, refreshToken: newRefreshToken } = generateTokens(payload);
-            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            const { accessToken, refreshToken: newRefreshToken, expiresAt } = generateTokens(payload);
 
             db.query(
                 'INSERT INTO tbl_refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',

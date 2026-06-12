@@ -14,7 +14,12 @@ export const generateTokens = (user) => {
         { expiresIn: '7d' }
     );
 
-    return { accessToken, refreshToken };
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
+
+    return { accessToken, refreshToken, expiresAt };
 };
 
 export const cookieOptions = (maxAge) => ({
