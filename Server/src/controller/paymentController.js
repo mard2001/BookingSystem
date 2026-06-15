@@ -10,8 +10,9 @@ const PAYMONGO_BASE = 'https://api.paymongo.com/v1';
 const authHeader = () =>
     'Basic ' + Buffer.from(`${process.env.PAYMONGO_SECRET_KEY}:`).toString('base64');
 
-// ─── Initiate QRPh Payment ───────────────────────────────────────────────────
+// paymentController.js
 
+// ─── Initiate QRPh Payment ───────────────────────────────────────────────────
 export const initiatePayment = async (req, res) => {
     if (!validateFields(req, res, ['bookingID', 'amount', 'customerName', 'customerEmail'])) return;
 
@@ -77,15 +78,40 @@ export const initiatePayment = async (req, res) => {
 
         if (!qrImageUrl) return response.serverError(res, 'QR code not returned from PayMongo.');
 
-        // 4. Persist intent ID to booking record
-        db.query(
-            'UPDATE tbl_booking_payment SET payment_intent_id = ?, payment_status = ?, updatedAt = ? WHERE bookingID = ?',
-            [intentId, 'pending_payment', getCurrentTimestamp(), bookingID],
-            (err, result) => {
-                if (err) return response.serverError(res, 'Database error', err);
-                if (!result.affectedRows) return response.notFound(res, 'Booking not found.');
+        const now = getCurrentTimestamp();
 
-                return response.ok(res, 'Payment initiated successfully.', { intentId, qrImageUrl });
+        // 4. Check if a payment record already exists for this booking
+        db.query(
+            'SELECT id FROM tbl_booking_payment WHERE bookingID = ?',
+            [bookingID],
+            (err, existing) => {
+                if (err) return response.serverError(res, 'Database error', err);
+
+                if (existing.length > 0) {
+                    // Update existing record with new intent (e.g. QR expired, user retrying)
+                    db.query(
+                        `UPDATE tbl_booking_payment 
+                         SET payment_intent_id = ?, payment_status = 'pending_payment', status = 'initiated', updatedAt = ?
+                         WHERE bookingID = ?`,
+                        [intentId, now, bookingID],
+                        (err) => {
+                            if (err) return response.serverError(res, 'Database error', err);
+                            return response.ok(res, 'Payment initiated successfully.', { intentId, qrImageUrl });
+                        }
+                    );
+                } else {
+                    // Insert new payment record
+                    db.query(
+                        `INSERT INTO tbl_booking_payment 
+                         (payment_intent_id, bookingID, payment_status, status, paidAt, createdAt, updatedAt)
+                         VALUES (?, ?, 'pending_payment', 'initiated', NULL, ?, ?)`,
+                        [intentId, bookingID, now, now],
+                        (err) => {
+                            if (err) return response.serverError(res, 'Database error', err);
+                            return response.ok(res, 'Payment initiated successfully.', { intentId, qrImageUrl });
+                        }
+                    );
+                }
             }
         );
 
@@ -99,7 +125,6 @@ export const initiatePayment = async (req, res) => {
 };
 
 // ─── Poll Payment Status ──────────────────────────────────────────────────────
-
 export const getPaymentStatus = (req, res) => {
     const { intentId } = req.params;
     if (!intentId) return response.badRequest(res, 'Payment intent ID is required.');
@@ -111,7 +136,7 @@ export const getPaymentStatus = (req, res) => {
         .then((pmRes) => {
             const attrs = pmRes.data.data.attributes;
             return response.ok(res, 'Payment status retrieved.', {
-                status: attrs.status,         // 'awaiting_payment_method' | 'awaiting_next_action' | 'succeeded' | 'payment_error'
+                status: attrs.status,
                 intentId,
             });
         })
@@ -119,19 +144,17 @@ export const getPaymentStatus = (req, res) => {
 };
 
 // ─── Webhook Handler ──────────────────────────────────────────────────────────
-// Note: Must receive raw body — use express.raw() in your route definition, NOT express.json()
-
-export const handleWebhook = async (req, res) => {
+export const handleWebhook = (req, res) => {
     const sigHeader = req.headers['paymongo-signature'];
     if (!sigHeader) return response.badRequest(res, 'Missing signature header.');
 
     try {
-        // Verify PayMongo signature
+        // Parse signature parts: "t=timestamp,te=sig" (test) or "t=timestamp,li=sig" (live)
         const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
         const timestamp = parts['t'];
-        const receivedSig = parts['te'] ?? parts['li']; // 'te' = test, 'li' = live
-        const rawBody = req.body.toString();
+        const receivedSig = parts['te'] ?? parts['li'];
 
+        const rawBody = req.body.toString();
         const computed = crypto
             .createHmac('sha256', process.env.PAYMONGO_WEBHOOK_SECRET)
             .update(`${timestamp}.${rawBody}`)
@@ -142,32 +165,44 @@ export const handleWebhook = async (req, res) => {
         const event = JSON.parse(rawBody);
         const eventType = event.data.attributes.type;
 
-        if (eventType === 'payment.paid') {
-            const paymentAttrs = event.data.attributes.data.attributes;
-            const bookingID = paymentAttrs.metadata?.booking_id;
+        if (eventType !== 'payment.paid') return res.sendStatus(200); // ignore other events
 
-            if (!bookingID) return res.sendStatus(200); // not our payment, ignore
+        const paymentAttrs = event.data.attributes.data.attributes;
+        const bookingID = paymentAttrs.metadata?.booking_id;
+        const intentId = event.data.attributes.data.id;
 
-            db.query(
-                `UPDATE tbl_booking_payment 
-                 SET payment_status = 'paid', status = 'confirmed', updatedAt = ? 
-                 WHERE bookingID = ?`,
-                [getCurrentTimestamp(), bookingID],
-                (err, result) => {
-                    if (err) {
-                        console.error('[Webhook] DB update error:', err);
-                        return res.sendStatus(500);
-                    }
-                    if (!result.affectedRows) {
-                        console.warn(`[Webhook] Booking not found: ${bookingID}`);
-                    }
-                    return res.sendStatus(200);
+        if (!bookingID) return res.sendStatus(200);
+
+        const now = getCurrentTimestamp();
+
+        // Update payment record
+        db.query(
+            `UPDATE tbl_booking_payment
+             SET payment_status = 'paid', status = 'completed', paidAt = ?, updatedAt = ?
+             WHERE bookingID = ? AND payment_intent_id = ?`,
+            [now, now, bookingID, intentId],
+            (err, paymentResult) => {
+                if (err) {
+                    console.error('[Webhook] Payment update error:', err);
+                    return res.sendStatus(500);
                 }
-            );
-        } else {
-            // Unhandled event type — acknowledge and move on
-            return res.sendStatus(200);
-        }
+
+                // Also confirm the booking itself
+                db.query(
+                    `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                    [now, bookingID],
+                    (err, bookingResult) => {
+                        if (err) {
+                            console.error('[Webhook] Booking update error:', err);
+                            return res.sendStatus(500);
+                        }
+
+                        console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
+                        return res.sendStatus(200);
+                    }
+                );
+            }
+        );
 
     } catch (err) {
         console.error('[Webhook] Error:', err);
