@@ -1,5 +1,5 @@
 import express from "express";
-import { getPaymentStatus, handleWebhook, initiatePayment } from "../controller/paymentController";
+import { getPaymentStatus, handleWebhook, initiatePayment } from "../controller/paymentController.js";
 
 const paymentRouter = express.Router();
 
