@@ -79,7 +79,7 @@ export const initiatePayment = async (req, res) => {
 
         // 4. Persist intent ID to booking record
         db.query(
-            'UPDATE tbl_bookings SET paymentIntentId = ?, paymentStatus = ?, updatedAt = ? WHERE bookingID = ?',
+            'UPDATE tbl_booking_payment SET payment_intent_id = ?, payment_status = ?, updatedAt = ? WHERE bookingID = ?',
             [intentId, 'pending_payment', getCurrentTimestamp(), bookingID],
             (err, result) => {
                 if (err) return response.serverError(res, 'Database error', err);
@@ -149,8 +149,8 @@ export const handleWebhook = async (req, res) => {
             if (!bookingID) return res.sendStatus(200); // not our payment, ignore
 
             db.query(
-                `UPDATE tbl_bookings 
-                 SET paymentStatus = 'paid', status = 'confirmed', updatedAt = ? 
+                `UPDATE tbl_booking_payment 
+                 SET payment_status = 'paid', status = 'confirmed', updatedAt = ? 
                  WHERE bookingID = ?`,
                 [getCurrentTimestamp(), bookingID],
                 (err, result) => {
