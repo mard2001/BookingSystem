@@ -382,7 +382,7 @@ export const confirmBooking2 = (req, res) => {
 
 export const confirmBooking = async (req, res) => {
     const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
-    const accountID = req.user?.id ?? -1;
+    const accountID = req.body?.userID ?? -1;
 
     if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
         return response.badRequest(res, 'Missing required fields');

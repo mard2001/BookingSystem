@@ -5,6 +5,7 @@ import cors from 'cors';
 import courtRouter from './src/routes/courtRouter.js';
 import authRouter from './src/routes/authRouter.js';
 import bookingRouter from './src/routes/bookingRouter.js';
+import paymentRouter from './src/routes/paymentRouter.js';
 
 const app = express();
 app.use(cors({
@@ -14,6 +15,9 @@ app.use(cors({
     ], 
     credentials: true,              
 }));
+
+app.use("/api/v1/payments", paymentRouter);
+
 app.use(cookieParser()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

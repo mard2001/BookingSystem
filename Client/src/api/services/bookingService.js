@@ -42,7 +42,7 @@ export const checkAvailability = async (courtID, date, selectedSlots) => {
     }
 };
 
-export const confirmBooking = async (courtID, bookingDetails, bookingDate, slotTimes, paymentMethod) => {
+export const confirmBooking = async (courtID, bookingDetails, bookingDate, slotTimes, paymentMethod, userID) => {
     try {
         const response = await api.post(`/api/v1/bookings/confirmbooking`, {
             courtID,
@@ -51,7 +51,8 @@ export const confirmBooking = async (courtID, bookingDetails, bookingDate, slotT
             bookerEmail: bookingDetails.contactPersonInfo.email, 
             bookerContactNumber: bookingDetails.contactPersonInfo.phoneNumber,      
             slotTimes,          
-            paymentMethod,     
+            paymentMethod, 
+            userID    
         });
 
         return response;

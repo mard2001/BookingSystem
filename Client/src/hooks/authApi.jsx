@@ -29,7 +29,7 @@ export const useLogin = () => {
                 userType: data.data[0].userType
             };
 
-            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem("user", encrypt(JSON.stringify(user)));
             localStorage.setItem("role", encrypt(user.userType));
             setLoggedInUser(user); 
             toast.success(data.message);

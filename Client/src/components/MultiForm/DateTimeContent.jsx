@@ -157,7 +157,11 @@ export const DateTimeContent = () => {
 
             {/* ✅ Dynamic Time Slots */}
             <div className="border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <p className="font-bold text-base mb-4">Available Slots</p>
+                <p className="font-bold text-base ">Available Slots</p>
+                <p className="mt-4 text-xs text-slate-400 flex items-center gap-1 mb-4">
+                    <Info size={12} />
+                    Standard booking duration is 60 minutes.
+                </p>
 
                 {/* No date selected yet */}
                 {!selectedDate && (
@@ -201,10 +205,7 @@ export const DateTimeContent = () => {
                     </div>
                 )}
 
-                <p className="mt-4 text-xs text-slate-400 flex items-center gap-1">
-                    <Info size={12} />
-                    Standard booking duration is 60 minutes.
-                </p>
+                
             </div>
 
             {(errors.courtID || errors.date || errors.time) && (

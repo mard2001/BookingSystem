@@ -18,7 +18,7 @@ export const AppointmentFormProvider = ({ children }) => {
         contactPersonInfo: {
             fullname:"",
             email:"",
-            phone:""
+            phoneNumber:""
         },
     });
 

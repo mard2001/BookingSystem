@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
             console.error("Logout failed:", err);
         } finally {
+            localStorage.removeItem('role');
             localStorage.removeItem('user');
             setLoggedInUser(null); 
         }
