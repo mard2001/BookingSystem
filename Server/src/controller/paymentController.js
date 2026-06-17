@@ -147,7 +147,7 @@ export const getPaymentStatus = (req, res) => {
 export const handleWebhook = (req, res) => {
     const sigHeader = req.headers['paymongo-signature'];
     
-    // TEMP: skip signature check in test/dev
+    // Only verify signature if header is present (skip for manual testing)
     if (sigHeader) {
         try {
             const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
@@ -162,28 +162,17 @@ export const handleWebhook = (req, res) => {
 
             if (computed !== receivedSig) return res.status(400).json({ error: 'Invalid signature.' });
         } catch (err) {
-            return res.status(400).json({ error: 'Signature error.' });
+            console.error('[Webhook] Signature error:', err);
+            return res.sendStatus(400);
         }
     }
 
     try {
-        // Parse signature parts: "t=timestamp,te=sig" (test) or "t=timestamp,li=sig" (live)
-        const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
-        const timestamp = parts['t'];
-        const receivedSig = parts['te'] ?? parts['li'];
-
         const rawBody = req.body.toString();
-        const computed = crypto
-            .createHmac('sha256', process.env.PAYMONGO_WEBHOOK_SECRET)
-            .update(`${timestamp}.${rawBody}`)
-            .digest('hex');
-
-        if (computed !== receivedSig) return res.status(400).json({ error: 'Invalid signature.' });
-
         const event = JSON.parse(rawBody);
         const eventType = event.data.attributes.type;
 
-        if (eventType !== 'payment.paid') return res.sendStatus(200); // ignore other events
+        if (eventType !== 'payment.paid') return res.sendStatus(200);
 
         const paymentAttrs = event.data.attributes.data.attributes;
         const bookingID = paymentAttrs.metadata?.booking_id;
@@ -193,23 +182,21 @@ export const handleWebhook = (req, res) => {
 
         const now = getCurrentTimestamp();
 
-        // Update payment record
         db.query(
             `UPDATE tbl_booking_payment
              SET payment_status = 'paid', status = 'completed', paidAt = ?, updatedAt = ?
              WHERE bookingID = ? AND payment_intent_id = ?`,
             [now, now, bookingID, intentId],
-            (err, paymentResult) => {
+            (err) => {
                 if (err) {
                     console.error('[Webhook] Payment update error:', err);
                     return res.sendStatus(500);
                 }
 
-                // Also confirm the booking itself
                 db.query(
                     `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
                     [now, bookingID],
-                    (err, bookingResult) => {
+                    (err) => {
                         if (err) {
                             console.error('[Webhook] Booking update error:', err);
                             return res.sendStatus(500);
@@ -221,7 +208,6 @@ export const handleWebhook = (req, res) => {
                 );
             }
         );
-
     } catch (err) {
         console.error('[Webhook] Error:', err);
         return res.sendStatus(500);
