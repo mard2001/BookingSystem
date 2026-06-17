@@ -22,7 +22,7 @@ export const fetchAvailableSlots = async (courtID, date) => {
 
 export const checkAvailability = async (courtID, date, selectedSlots) => {
     try {
-        const formattedDate = new Date(date).toLocaleDateString('en-CA', {timeZone: 'Asia/Manila'});
+        const formattedDate = new Date(date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
         const response = await api.post(`/api/v1/bookings/check/availability`, {
             courtID,
@@ -30,15 +30,22 @@ export const checkAvailability = async (courtID, date, selectedSlots) => {
             slotTimes: selectedSlots
         });
 
-        return { available: true, takenSlots: [] };
+        return { 
+            available: true, 
+            takenSlots: [], 
+            message: response.message 
+        };
 
     } catch (error) {
-        // backend returns 409 conflict with takenSlots when slots are taken
         if (error.response?.status === 409) {
-            const takenSlots = error.response.data.data?.takenSlots ?? [];
-            return { available: false, takenSlots };
+            const { takenSlots, message } = error.response.data;
+            return { 
+                available: false, 
+                takenSlots: takenSlots ?? [], 
+                message: message ?? 'Some slots are unavailable.' 
+            };
         }
-        throw error; // rethrow other errors (500, network, etc.)
+        throw error;
     }
 };
 

@@ -5,18 +5,18 @@ import { ServiceFormContent } from './ServiceFormContent'
 import { DateTimeContent } from './DateTimeContent'
 import { ContactInfoContent } from './ContactInfoContent'
 import { SummaryContent } from './SummaryContent'
+import { QRPaymentContent } from './QRPaymentContent'
 
 
 
 
 export const MultiStepForm = ({ onSuccess }) => {
-    const summaryRef = useRef(null); 
-    const { steps, currentStep, nextStep, prevStep } = useAppointmentFormContext();
+    const { steps, currentStep, nextStep, prevStep, formData } = useAppointmentFormContext();
     const [isChecking, setIsChecking] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [confirmBookingFn, setConfirmBookingFn] = useState(null);
     
-
     const handleSelectTime = (time) => {
         setSelectedTimes(prev =>
             prev.includes(time) ? prev.filter(t => t !== time) : [...prev, time]
@@ -31,7 +31,9 @@ export const MultiStepForm = ({ onSuccess }) => {
             case 3:
                 return <ContactInfoContent />
             case 4: 
-                return <SummaryContent ref={summaryRef} setIsChecking={setIsChecking} setIsSubmitting={setIsSubmitting} isConfirmed={isConfirmed} setIsConfirmed={setIsConfirmed} onSuccess={onSuccess} />
+                return <SummaryContent setIsChecking={setIsChecking} setIsSubmitting={setIsSubmitting} isConfirmed={isConfirmed} setIsConfirmed={setIsConfirmed} onSuccess={onSuccess} onConfirm={(fn) => setConfirmBookingFn(() => fn)} />
+            case 5: 
+                return <QRPaymentContent totalAmount={formData.paymentInfo.totalAmount} onPaid={onSuccess} />
             default:
                 null
         }
@@ -116,16 +118,14 @@ export const MultiStepForm = ({ onSuccess }) => {
                     Previous
                 </button> 
 
-                {currentStep < steps.length ? (
+                {currentStep < steps.length - 1 ? (
                     <button onClick={nextStep} className={`flex items-center px-8 py-4 rounded-2xl font-semibold transition-all duration-200 hover:inset-shadow-sm hover:shadow-lg hover:-translate-y-1 hover:cursor-pointer`}>
                         Next
                         <ChevronRightIcon className='w-5 h-5 ml-2' />
                     </button>
-                ) : isConfirmed ? (
-                    null  
-                ): (
+                ) : currentStep === steps.length - 1 ? (
                     <button
-                        onClick={() => summaryRef.current?.handleConfirmBooking()}
+                        onClick={() => confirmBookingFn?.()}
                         disabled={isChecking || isSubmitting}
                         className={`flex items-center px-10 py-4  text-white
                                     rounded-2xl font-semibold transition-all duration-200 shadow-lg  
@@ -140,9 +140,9 @@ export const MultiStepForm = ({ onSuccess }) => {
                                     : 'Check Availability & Submit'
                         }
                     </button>
+                ) : (
+                    null  
                 )}
-                
-                
             </div>
         </div>
     )

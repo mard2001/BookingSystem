@@ -1,4 +1,4 @@
-import { CalendarClockIcon, ClipboardCheck, FileText, LucideServer } from 'lucide-react';
+import { BanknoteArrowDown, CalendarClockIcon, ClipboardCheck, FileText, LucideServer } from 'lucide-react';
 import { createContext, useContext, useState } from 'react'
 
 const AppointmentFormContext = createContext();
@@ -20,6 +20,11 @@ export const AppointmentFormProvider = ({ children }) => {
             email:"",
             phoneNumber:""
         },
+        paymentInfo: { 
+        paymentMethod: null,  
+        bookingID: null,   
+        totalAmount: null, 
+    }
     });
 
     const validateStep = (step) => {
@@ -58,6 +63,12 @@ export const AppointmentFormProvider = ({ children }) => {
             }
         }
 
+        if (step === 4) {
+            if (!formData.paymentInfo.paymentMethod) {
+                newErrors.paymentMethod = "Please select a payment method to continue.";
+            }
+        }
+
         setErrors(newErrors);
 
         return Object.keys(newErrors).length == 0;
@@ -85,6 +96,14 @@ export const AppointmentFormProvider = ({ children }) => {
         setFormData(prev => ({ ...prev, contactPersonInfo: { ...prev.contactPersonInfo, [field]: value } }))
     }
 
+    const updatePaymentMethod = (method) => {
+        setFormData(prev => ({...prev, paymentInfo: { ...prev.paymentInfo, paymentMethod: method }}));
+    };
+
+    const updateBookingResult = (bookingID, totalAmount) => {
+        setFormData(prev => ({...prev,paymentInfo: { ...prev.paymentInfo, bookingID, totalAmount }}));
+    };
+
     const nextStep = () => {
         if(validateStep(currentStep)){
             setCurrentStep((prev) => Math.min(prev + 1, steps.length));
@@ -94,6 +113,8 @@ export const AppointmentFormProvider = ({ children }) => {
     const prevStep = () => {
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     }
+
+    const goToStep = (step) => setCurrentStep(step);
 
     const resetForm = () => {
         setFormData({
@@ -111,9 +132,10 @@ export const AppointmentFormProvider = ({ children }) => {
         { id:"2", key:"step2", icon: CalendarClockIcon, title:"Date & Time", description:"Pick Date & Time" },
         { id:"3", key:"step3", icon: FileText, title:"Contact Information", description:"Basic Information" },
         { id:"4", key:"step4", icon: ClipboardCheck, title:"Summary", description:"Final Checking" },
+        { id:"5", key:"step5", icon: BanknoteArrowDown, title:"Payment",description:"Complete Payment" }, 
     ];
 
-    const value = { steps, currentStep, formData, errors, updateCourtSelected, updateDateTimeSelected, updateContactInfoSelected, nextStep, prevStep, resetForm };
+    const value = { steps, currentStep, formData, errors, updateCourtSelected, updateDateTimeSelected, updateContactInfoSelected, updatePaymentMethod, updateBookingResult, nextStep, prevStep, resetForm, goToStep };
 
     return (
         <AppointmentFormContext.Provider value={value}>

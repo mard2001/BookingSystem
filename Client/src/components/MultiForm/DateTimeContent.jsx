@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Info, InfoIcon } from "lucide-react"
 import { useAppointmentFormContext } from "../../context/AppointmentFormContext"
 import { fetchAvailableSlots } from "../../api/services/bookingService"
 import { formatSlotTime } from "../../utils/ValueFormat"
+import { CustomTooltip } from "../CustomTooltip"
 
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"]
 
@@ -73,9 +74,11 @@ export const DateTimeContent = () => {
                 const formatted = res.data.map(slot => ({
                     time: formatSlotTime(slot.slotTime),  
                     value: slot.slotTime,                 
-                    available: slot.isAvailable === 1
+                    available: slot.isAvailable === 1,
+                    reason: slot.unavailableReason
                 }));
                 setTimeSlots(formatted);
+                console.log(timeSlots)
             } catch (err) {
                 setSlotsError('Failed to load available slots.');
             } finally {
@@ -178,29 +181,41 @@ export const DateTimeContent = () => {
                     <p className="text-sm text-red-400 text-center py-4">{slotsError}</p>
                 )}
 
-                {/* Slots grid */}
                 {!loadingSlots && !slotsError && timeSlots.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {timeSlots.map((slot) => {
-                            const isTimeSel = selectedTimes.includes(slot.value)
+                            const isTimeSel = selectedTimes.includes(slot.value);
+
+                            const tooltip =
+                                slot.reason === 'booked' ? 'This slot is already booked' :
+                                slot.reason === 'blackout' ? 'Venue is closed on this date' :
+                                slot.reason === 'pending' ? 'Someone is currently booking this slot' :
+                                isTimeSel ? 'Click to deselect' : 'Click to select';
+
                             return (
-                                <button
-                                    key={slot.value}
-                                    disabled={!slot.available}
-                                    onClick={() => slot.available && handleSelectTime(slot.value)}
-                                    className={`
-                                        py-2 px-3 rounded-xl text-sm font-semibold border transition-all duration-200
-                                        ${!slot.available
-                                            ? "border-slate-200 text-slate-300 line-through cursor-not-allowed"
-                                            : isTimeSel
-                                                ? "bg-primary border-primary text-white shadow-md"
-                                                : "border-primary text-primary hover:bg-primary/10 cursor-pointer"
-                                        }
-                                    `}
-                                >
-                                    {slot.time}
-                                </button>
-                            )
+                                <div key={slot.value} className="relative group">
+                                    <button
+                                        disabled={!slot.available}
+                                        onClick={() => slot.available && handleSelectTime(slot.value)}
+                                        className={`
+                                            w-full py-2 px-3 rounded-xl text-sm font-semibold border transition-all duration-200
+                                            ${!slot.available
+                                                ? slot.reason === 'pending'
+                                                    ? "border-amber-200 bg-amber-50 text-amber-400 cursor-not-allowed"
+                                                    : "border-slate-200 text-slate-300 line-through cursor-not-allowed"
+                                                : isTimeSel
+                                                    ? "bg-primary border-primary text-white shadow-md"
+                                                    : "border-primary text-primary hover:bg-primary/10 cursor-pointer"
+                                            }
+                                        `}
+                                    >
+                                        {slot.reason === 'pending' ? `${slot.time} ⏳` : slot.time}
+                                    </button>
+
+                                    {/* Tooltip */}
+                                    <CustomTooltip content={tooltip} />
+                                </div>
+                            );
                         })}
                     </div>
                 )}
