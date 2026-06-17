@@ -270,8 +270,19 @@ export const handleWebhook = (req, res) => {
                             return res.sendStatus(500);
                         }
 
-                        console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
-                        return res.sendStatus(200);
+                        db.query(
+                            `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                            [now, bookingID],
+                            (err) => {
+                                if (err) {
+                                    console.error('[Webhook] Booking update error:', err);
+                                    return res.sendStatus(500);
+                                }
+
+                                console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
+                                return res.sendStatus(200);
+                            }
+                        );
                     }
                 );
             }
