@@ -10,9 +10,6 @@ const PAYMONGO_BASE = 'https://api.paymongo.com/v1';
 const authHeader = () =>
     'Basic ' + Buffer.from(`${process.env.PAYMONGO_SECRET_KEY}:`).toString('base64');
 
-// paymentController.js
-
-// ─── Initiate QRPh Payment ───────────────────────────────────────────────────
 export const initiatePayment = async (req, res) => {
     if (!validateFields(req, res, ['bookingID', 'amount', 'customerName', 'customerEmail'])) return;
 
@@ -124,7 +121,6 @@ export const initiatePayment = async (req, res) => {
     }
 };
 
-// ─── Poll Payment Status ──────────────────────────────────────────────────────
 export const getPaymentStatus = (req, res) => {
     const { intentId } = req.params;
     if (!intentId) return response.badRequest(res, 'Payment intent ID is required.');
@@ -143,8 +139,7 @@ export const getPaymentStatus = (req, res) => {
         .catch((err) => response.serverError(res, 'Failed to retrieve payment status.', err));
 };
 
-// ─── Webhook Handler ──────────────────────────────────────────────────────────
-export const handleWebhook = (req, res) => {
+export const handleWebhookTEST = (req, res) => {
     const sigHeader = req.headers['paymongo-signature'];
     
     // Only verify signature if header is present (skip for manual testing)
@@ -184,6 +179,79 @@ export const handleWebhook = (req, res) => {
 
         db.query(
             `UPDATE tbl_booking_payment
+                SET payment_status = 'paid', status = 'completed', paidAt = ?, updatedAt = ?
+                WHERE bookingID = ? AND payment_intent_id = ?`,
+            [now, now, bookingID, intentId],
+            (err) => {
+                if (err) {
+                    console.error('[Webhook] Payment update error:', err);
+                    return res.sendStatus(500);
+                }
+
+                db.query(
+                    `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                    [now, bookingID],
+                    (err) => {
+                        if (err) {
+                            console.error('[Webhook] Booking update error:', err);
+                            return res.sendStatus(500);
+                        }
+
+                        db.query(
+                            `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                            [now, bookingID],
+                            (err) => {
+                                if (err) {
+                                    console.error('[Webhook] Booking update error:', err);
+                                    return res.sendStatus(500);
+                                }
+
+                                console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
+                                return res.sendStatus(200);
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    } catch (err) {
+        console.error('[Webhook] Error:', err);
+        return res.sendStatus(500);
+    }
+};
+
+export const handleWebhook = (req, res) => {
+    const sigHeader = req.headers['paymongo-signature'];
+    if (!sigHeader) return response.badRequest(res, 'Missing signature header.'); // ✅ strict
+
+    try {
+        const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
+        const timestamp = parts['t'];
+        const receivedSig = parts['te'] ?? parts['li'];
+
+        const rawBody = req.body.toString();
+        const computed = crypto
+            .createHmac('sha256', process.env.PAYMONGO_WEBHOOK_SECRET)
+            .update(`${timestamp}.${rawBody}`)
+            .digest('hex');
+
+        if (computed !== receivedSig) return res.status(400).json({ error: 'Invalid signature.' });
+
+        const event = JSON.parse(rawBody);
+        const eventType = event.data.attributes.type;
+
+        if (eventType !== 'payment.paid') return res.sendStatus(200);
+
+        const paymentAttrs = event.data.attributes.data.attributes;
+        const bookingID = paymentAttrs.metadata?.booking_id;
+        const intentId = event.data.attributes.data.id;
+
+        if (!bookingID) return res.sendStatus(200);
+
+        const now = getCurrentTimestamp();
+
+        db.query(
+            `UPDATE tbl_booking_payment
              SET payment_status = 'paid', status = 'completed', paidAt = ?, updatedAt = ?
              WHERE bookingID = ? AND payment_intent_id = ?`,
             [now, now, bookingID, intentId],
@@ -208,8 +276,25 @@ export const handleWebhook = (req, res) => {
                 );
             }
         );
+
     } catch (err) {
         console.error('[Webhook] Error:', err);
         return res.sendStatus(500);
     }
+};
+
+export const getBookingPaymentStatus = (req, res) => {
+    const { bookingID } = req.params;
+
+    db.query(
+        `SELECT payment_status FROM tbl_booking_payment WHERE bookingID = ?`,
+        [bookingID],
+        (err, results) => {
+            if (err) return response.serverError(res, 'Database error', err);
+            if (!results.length) return response.notFound(res, 'Payment not found');
+            return response.ok(res, 'Payment status retrieved.', { 
+                status: results[0].payment_status  // 'pending_payment' | 'paid'
+            });
+        }
+    );
 };
