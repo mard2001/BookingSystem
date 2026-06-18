@@ -3,11 +3,12 @@ import { useAppointmentFormContext } from '../../context/AppointmentFormContext'
 import { Banknote, CalendarCheck2, CreditCard, Ratio, User2Icon } from 'lucide-react';
 import { paymentOptions } from '../../constants/contants';
 import { addOneHour, formatSlotTime, getDayType, getRateKey, getTimeType } from '../../utils/ValueFormat';
-import { checkAvailability, confirmBooking } from '../../api/services/bookingService';
+import { cancelBookingInitiation, checkAvailability, confirmBooking } from '../../api/services/bookingService';
 import { toast } from 'sonner';
 import { delay } from '../../utils/ApiHandler';
 import { BookingConfirmation } from './BookingConfirmation';
 import { useEffect } from 'react';
+import QRPayment from '../Payment/QRPayment';
 
 export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, setIsConfirmed, onSuccess, onConfirm }) => {
     const { formData, resetForm, updatePaymentMethod, updateBookingResult, nextStep, goToStep } = useAppointmentFormContext();
@@ -17,6 +18,9 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
     const [error, setError] = useState(null);
     const [isConfirmBooking, setIsConfirmBooking] = useState({});
     const [isResetForm, setIsResetForm] = useState(false);
+    const [showQR, setShowQR] = useState(false);
+    const [qrBooking, setQrBooking] = useState(null);
+    const [paymentIntentID, setPaymentIntentID] = useState(null);
 
     const court = formData.courtInfo.court;
     const date = formData.dateTimeInfo.date;
@@ -65,9 +69,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
         try {
             setIsChecking(true);
             await delay(1000);
-            console.log('calling checkAvailability...');
             const res = await checkAvailability(court.courtID, date, times);
-            console.log('checkAvailability result:', res);
             const { available, takenSlots, message } = res;
             await delay(500);
             setIsChecking(false);
@@ -77,7 +79,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                 setError(message);
                 return;
             }
-
+            
             setIsSubmitting(true);
             await delay(1000);
 
@@ -89,11 +91,26 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                 toast.error(submitRes.message);
                 return;
             }
+            // updatePaymentMethod(selectedPayment);
+            // updateBookingResult(submitRes.data.bookingID, totalAmount);
 
             if (selectedPayment === 'online') {
-                updatePaymentMethod('qrph');
-                updateBookingResult(submitRes.data.bookingID, totalAmount);
-                goToStep(5); // ✅ instead of nextStep()
+                // goToStep(5); // ✅ instead of nextStep()
+                setQrBooking({
+                    bookingID: submitRes.data.bookingID,
+                    bookingDetails: {
+                        ...formData,
+                        paymentInfo: {
+                            ...formData.paymentInfo,
+                            paymentMethod: selectedPayment,
+                            bookingID: submitRes.data.bookingID,
+                            totalAmount,
+                        }
+                    }
+                });
+
+                console.log("formData",formData);
+                setShowQR(true);
             } else {
                 toast.success(submitRes.message);
                 setIsConfirmed(true);
@@ -122,10 +139,15 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
         resetForm();
     }, [resetForm]);
 
-    console.log(formData)
+    const handleCloseQRPayment =() => {
+        setShowQR(false);
+        cancelBookingInitiation(qrBooking?.bookingID, paymentIntentID);
+    }
+
     return (
         <>
-            {!isConfirmed ? (
+            {!isConfirmed ?
+            (
                 <div>
                     <div className='text-center'>
                         <span className='uppercase text-xs text-primary/70 font-bold tracking-wider'>final step</span>
@@ -260,6 +282,19 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
             ) : (
                 // Pay at Court success screen
                 <BookingConfirmation bookingId={isConfirmBooking.bookingID} onReset={handleResetFormNow} />
+            )}
+
+            {showQR && qrBooking && (
+                <QRPayment
+                    booking={qrBooking}
+                    onClose={handleCloseQRPayment}
+                    onPaymentSuccess={() => {
+                        setShowQR(false);
+                        setIsConfirmed(true);
+                        setIsConfirmBooking({ bookingID: qrBooking.bookingID });
+                        onSuccess?.();
+                    }}
+                />
             )}
         </>
     );

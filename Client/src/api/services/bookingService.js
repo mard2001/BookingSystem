@@ -99,7 +99,7 @@ export const getUpcomingBookings = async(userID) => {
     }
 }
 
-export  const updateBookingStatus = async(status, bookingID) => {
+export const updateBookingStatus = async(status, bookingID) => {
     try {
         const response = await api.put(`/api/v1/bookings/update/${bookingID}/status`,{
             status
@@ -111,7 +111,7 @@ export  const updateBookingStatus = async(status, bookingID) => {
 
 }
 
-export  const updateBookingDetails = async(bookingDetails, bookingID) => {
+export const updateBookingDetails = async(bookingDetails, bookingID) => {
     try {
         const response = await api.put(`/api/v1/bookings/update/${bookingID}/booker-details`,{
             bookerFullName : bookingDetails.bookerFullName,
@@ -124,5 +124,14 @@ export  const updateBookingDetails = async(bookingDetails, bookingID) => {
         throw error;
     }
 
+}
+
+export const cancelBookingInitiation = async(bookingID, paymentIntentID) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/cancel/${bookingID}/${paymentIntentID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
 }
 

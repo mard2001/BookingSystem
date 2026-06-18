@@ -1,43 +1,46 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { initiatePayment } from '../api/services/paymentService';
+import { initiatePayment, checkPaymentStatus, getBookingPaymentStatus } from '../api/services/paymentService'; // ✅ import checkPaymentStatus
 
-const QR_EXPIRY_SECONDS = 10 * 60; // 10 minutes
-const POLL_INTERVAL_MS = 5000;     // poll every 5 seconds
+const QR_EXPIRY_SECONDS = 10 * 60;
+const POLL_INTERVAL_MS = 5000;
 
 export const usePayment = ({ onPaymentSuccess }) => {
     const [qrImage, setQrImage] = useState(null);
     const [intentId, setIntentId] = useState(null);
-    const [paymentState, setPaymentState] = useState('idle'); // idle | loading | awaiting | paid | expired | error
+    const [paymentState, setPaymentState] = useState('idle');
     const [timeLeft, setTimeLeft] = useState(QR_EXPIRY_SECONDS);
     const [errorMessage, setErrorMessage] = useState(null);
+    const [bookingID, setBookingID] = useState(null);
 
     const pollRef = useRef(null);
     const timerRef = useRef(null);
+    const bookingIDRef = useRef(null);
 
     const clearTimers = () => {
         clearInterval(pollRef.current);
         clearInterval(timerRef.current);
     };
 
-    // Poll PayMongo for payment confirmation
+    // Poll for payment confirmation
     useEffect(() => {
-        if (!intentId || paymentState !== 'awaiting') return;
+        if (!bookingID || paymentState !== 'awaiting') return;
 
         pollRef.current = setInterval(async () => {
             try {
-                const response = await checkPaymentStatus(intentId);
-                if (data.data?.status === 'succeeded') {
+                const res = await getBookingPaymentStatus(bookingID);
+                console.log('poll res:', res);  
+                if (res?.data?.status === 'paid') {  
                     clearTimers();
                     setPaymentState('paid');
                     onPaymentSuccess?.();
                 }
             } catch {
-                // silent — don't break UX on a failed poll
+                // silent
             }
         }, POLL_INTERVAL_MS);
 
         return () => clearInterval(pollRef.current);
-    }, [intentId, paymentState, onPaymentSuccess]);
+    }, [bookingID, paymentState, onPaymentSuccess]);
 
     // Countdown timer
     useEffect(() => {
@@ -61,15 +64,17 @@ export const usePayment = ({ onPaymentSuccess }) => {
         setPaymentState('loading');
         setErrorMessage(null);
         setTimeLeft(QR_EXPIRY_SECONDS);
+        setBookingID(bookingID);
+        bookingIDRef.current = bookingID;
 
         try {
             const data = await initiatePayment(bookingID, amount, customerName, customerEmail);
-
-            setQrImage(data.data.qrImageUrl);
-            setIntentId(data.data.intentId);
+            console.log('initiate data:', data);  
+            setQrImage(data.data.qrImageUrl);  
+            setIntentId(data.data.intentId);    
             setPaymentState('awaiting');
         } catch (err) {
-            setErrorMessage(err.response?.data?.message ?? 'Failed to generate QR code.');
+            setErrorMessage(err.message ?? 'Failed to generate QR code.');
             setPaymentState('error');
         }
     }, []);
@@ -81,6 +86,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
         setPaymentState('idle');
         setTimeLeft(QR_EXPIRY_SECONDS);
         setErrorMessage(null);
+        bookingIDRef.current = null; 
     }, []);
 
     const formatTime = (s) =>
@@ -89,7 +95,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
     return {
         qrImage,
         intentId,
-        paymentState,  // 'idle' | 'loading' | 'awaiting' | 'paid' | 'expired' | 'error'
+        paymentState,
         timeLeft,
         formattedTime: formatTime(timeLeft),
         errorMessage,

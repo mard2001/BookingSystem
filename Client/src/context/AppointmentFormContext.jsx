@@ -21,10 +21,10 @@ export const AppointmentFormProvider = ({ children }) => {
             phoneNumber:""
         },
         paymentInfo: { 
-        paymentMethod: null,  
-        bookingID: null,   
-        totalAmount: null, 
-    }
+            paymentMethod: null,  
+            bookingID: null,   
+            totalAmount: null, 
+        }
     });
 
     const validateStep = (step) => {
@@ -121,6 +121,7 @@ export const AppointmentFormProvider = ({ children }) => {
             courtInfo: { court: null },
             dateTimeInfo: { date: "", time: [] },
             contactPersonInfo: { fullname: "", email: "", phoneNumber: "" },
+            paymentInfo: { paymentMethod: null, bookingID: null, totalAmount: null }
         });
         setErrors({});
         setCurrentStep(1);

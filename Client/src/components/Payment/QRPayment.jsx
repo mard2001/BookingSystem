@@ -1,37 +1,57 @@
 import { useEffect } from 'react';
 import { usePayment } from '../../hooks/usePayment';
 import { CircleCheck, ClockAlertIcon, QrCodeIcon, RefreshCcw, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { addOneHour, formatSlotTime } from '../../utils/ValueFormat';
 
-export default function QRPayment({ booking, onClose, onPaymentSuccess }) {
+export default function QRPayment({ booking, onClose, onPaymentSuccess, onIntentCreated }) {
     console.log("booking", booking)
-    const { qrImage, paymentState, formattedTime, errorMessage, initiate, reset } = usePayment({
+    const { qrImage, intentId, paymentState, formattedTime, errorMessage, initiate, reset } = usePayment({
         onPaymentSuccess: () => {
             onPaymentSuccess?.();
         },
     });
 
-    // Auto-initiate when modal mounts
+    const formattedTimes = () => {
+        if (!booking.bookingDetails.dateTimeInfo.time || booking.bookingDetails.dateTimeInfo.time.length === 0) return "";
+        const times = booking.bookingDetails.dateTimeInfo.time;
+        const startTime = formatSlotTime(times[0]);
+        const endTime = formatSlotTime(addOneHour(times[times.length - 1]));
+        return `${startTime} - ${endTime}`;
+    };
+
+    const totalHourDuration = () => {
+        const len = booking.bookingDetails.dateTimeInfo.time?.length ?? 0;
+        return len > 0 ? `${len}${len > 1 ? 'hrs.' : 'hr.'}` : "No time selected";
+    };
+
     useEffect(() => {
         initiate({
             bookingID: booking.bookingID,
-            amount: booking.totalAmount,
-            customerName: booking.contactPersonInfo.fullname,
-            customerEmail: booking.bookerEmail,
+            amount: booking.bookingDetails.paymentInfo.totalAmount,
+            customerName: booking.bookingDetails.contactPersonInfo.fullname,
+            customerEmail: booking.bookingDetails.contactPersonInfo.email,
         });
 
-        return () => reset(); // cleanup on unmount
+        return () => reset();
     }, [booking]);
+
+    useEffect(() => {
+        if (intentId) {
+            onIntentCreated?.(intentId);
+        }
+    }, [intentId, onIntentCreated]);
 
     const handleRetry = () => {
         initiate({
-            bookingID: "BK-20250615-001",
-            amount: 10,
-            customerName: booking.contactPersonInfo.fullname,
-            customerEmail: booking.contactPersonInfo.email,
+            bookingID: booking.bookingID,
+            amount: booking.bookingDetails.paymentInfo.totalAmount,
+            customerName: booking.bookingDetails.contactPersonInfo.fullname,
+            customerEmail: booking.bookingDetails.contactPersonInfo.email,
         });
     };
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
 
@@ -56,14 +76,22 @@ export default function QRPayment({ booking, onClose, onPaymentSuccess }) {
 
                 {/* Booking summary */}
                 <div className="bg-gray-50 rounded-xl px-4 py-3 mb-5 text-sm">
-                    <div className="flex justify-between text-gray-500">
-                        <span>Booking</span>
-                        <span className="font-medium text-gray-700">{booking.bookingID}</span>
+                    <div className="flex justify-between text-gray-500 mt-1">
+                        <span>Booking:</span>
+                        <span className="font-medium text-xs text-gray-700">{booking.bookingID}</span>
                     </div>
                     <div className="flex justify-between text-gray-500 mt-1">
-                        <span>Amount</span>
+                        <span>Booking Name:</span>
+                        <span className="font-medium text-xs text-gray-700">{booking.bookingDetails.contactPersonInfo.fullname}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 mt-1">
+                        <span>Booking Date:</span>
+                        <span className="font-medium text-xs text-gray-700">{formattedTimes()} ({totalHourDuration()})</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 mt-1">
+                        <span>Amount:</span>
                         <span className="font-semibold text-gray-800">
-                            ₱{parseFloat(booking.totalAmount).toFixed(2)}
+                            ₱{parseFloat(booking.bookingDetails.paymentInfo.totalAmount).toFixed(2)}
                         </span>
                     </div>
                 </div>
@@ -165,6 +193,7 @@ export default function QRPayment({ booking, onClose, onPaymentSuccess }) {
                     </p>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
