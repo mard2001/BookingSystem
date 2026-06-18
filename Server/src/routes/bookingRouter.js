@@ -1,5 +1,5 @@
 import express from "express";
-import { checkAvailability, confirmBooking, getAvailableSlots, getBookings, getCalendarBookings, getHistoricalBookings, getUpcomingBookings, updateBookingBookerDetails, updateBookingStatus } from "../controller/bookingController.js";
+import { cancelBooking, checkAvailability, confirmBooking, getAvailableSlots, getBookings, getCalendarBookings, getHistoricalBookings, getUpcomingBookings, updateBookingBookerDetails, updateBookingStatus } from "../controller/bookingController.js";
 import { authenticate } from "../middleware/authenticate.js";
 
 const bookingRouter = express.Router();
@@ -14,6 +14,8 @@ bookingRouter.post('/check/availability', checkAvailability);
 bookingRouter.post('/confirmbooking', confirmBooking);
 bookingRouter.put('/update/:bookingID/status', updateBookingStatus);
 bookingRouter.put('/update/:bookingID/booker-details', updateBookingBookerDetails);
+bookingRouter.put('/update/:bookingID/booker-details', updateBookingBookerDetails);
+bookingRouter.put('/cancel/:bookingID/:paymentIntent', cancelBooking);
 
 
 

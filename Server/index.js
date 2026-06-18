@@ -16,15 +16,18 @@ app.use(cors({
     credentials: true,              
 }));
 
-app.use("/api/v1/payments", paymentRouter);
 
 app.use(cookieParser()); 
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/api/v1/payments/webhook", express.raw({ type: 'application/json' }));
+
+app.use(express.json());
 
 app.use("/api/v1/courts", courtRouter);
 app.use("/api/v1/users", authRouter);
 app.use("/api/v1/bookings", bookingRouter);
+app.use("/api/v1/payments", paymentRouter);
 
 
 app.listen(process.env.SERVER_PORT, () => {

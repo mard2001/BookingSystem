@@ -593,3 +593,65 @@ export const updateBookingBookerDetails = (req, res) => {
         return response.ok(res, "Booking details updated successfully.", result);
     });
 }
+
+export const cancelBooking = async (req, res) => {
+    if (!req.params.bookingID || !req.params.paymentIntent) return response.badRequest(res, "Booking ID is required.");
+    const { bookingID, paymentIntent } = req.params;
+
+    let conn;
+    try {
+        conn = await getConnection();
+        await new Promise((resolve, reject) => conn.beginTransaction(err => err ? reject(err) : resolve()));
+
+        const [paymentResult] = await new Promise((resolve, reject) =>
+            conn.query(
+                `UPDATE tbl_booking_payment
+                SET payment_status = 'cancelled', status = 'cancelled', updatedAt = ?
+                WHERE bookingID = ? AND payment_intent_id = ?`,
+                [getCurrentTimestamp(), bookingID, paymentIntent ],
+                (err, result) => err ? reject(err) : resolve([result])
+            )
+        );
+
+        if (paymentResult.affectedRows === 0) {
+            conn.rollback(() => conn.release());
+            return response.notFound(res, "Payment Intent not found.");
+        }
+
+        const [bookingResult] = await new Promise((resolve, reject) =>
+            conn.query(
+                `UPDATE tbl_bookings SET status = ?, updatedAt = ? WHERE bookingID = ?`,
+                ['cancelled', getCurrentTimestamp(), bookingID],
+                (err, result) => err ? reject(err) : resolve([result])
+            )
+        );
+
+        if (bookingResult.affectedRows === 0) {
+            conn.rollback(() => conn.release());
+            return response.notFound(res, "Booking not found.");
+        }
+
+        const [slotsResult] = await new Promise((resolve, reject) =>
+            conn.query(
+                `UPDATE tbl_booking_slots SET status = ?, updatedAt = ? WHERE bookingID = ?`,
+                ['cancelled', getCurrentTimestamp(), bookingID],
+                (err, result) => err ? reject(err) : resolve([result])
+            )
+        );
+
+        if (slotsResult.affectedRows === 0) {
+            conn.rollback(() => conn.release());
+            return response.notFound(res, "Booking slots not found.");
+        }
+
+        await new Promise((resolve, reject) => conn.commit(err => err ? reject(err) : resolve()));
+        conn.release();
+
+        return response.ok(res, 'Booking cancelled', { bookingID });
+    } catch (err) {
+        if (conn) {
+            conn.rollback(() => conn.release());
+        }
+        return response.serverError(res, 'Cancellation error', err);
+    }
+};
