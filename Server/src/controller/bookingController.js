@@ -606,7 +606,7 @@ export const cancelBooking = async (req, res) => {
         const [paymentResult] = await new Promise((resolve, reject) =>
             conn.query(
                 `UPDATE tbl_booking_payment
-                SET payment_status = 'cancelled', status = 'cancelled', updatedAt = ?
+                SET payment_status = 'failed', status = 'cancelled', updatedAt = ?
                 WHERE bookingID = ? AND payment_intent_id = ?`,
                 [getCurrentTimestamp(), bookingID, paymentIntent ],
                 (err, result) => err ? reject(err) : resolve([result])
