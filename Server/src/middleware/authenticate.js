@@ -6,10 +6,10 @@ export const authenticate = (req, res, next) => {
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
 
     try {
-        const decoded = jwt.verify(token, process.env.ACCESS_SECRET); // ← was SECRET_KEY
+        const decoded = jwt.verify(token, process.env.ACCESS_SECRET);  
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ message: 'Unauthorized' }); // ← don't expose err.message
+        return res.status(401).json({ message: 'Unauthorized' });  
     }
 };

@@ -155,10 +155,10 @@ export const handleWebhookTEST = (req, res) => {
                 .update(`${timestamp}.${rawBody}`)
                 .digest('hex');
 
-            if (computed !== receivedSig) return res.status(400).json({ error: 'Invalid signature.' });
+            if (computed !== receivedSig) return response.badRequest(res, 'Invalid signature.');
         } catch (err) {
             console.error('[Webhook] Signature error:', err);
-            return res.sendStatus(400);
+            return response.serverError(res, "Signature error", err);
         }
     }
 
@@ -185,7 +185,7 @@ export const handleWebhookTEST = (req, res) => {
             (err) => {
                 if (err) {
                     console.error('[Webhook] Payment update error:', err);
-                    return res.sendStatus(500);
+                    return response.serverError(res, "Payment update error", err);
                 }
 
                 db.query(
@@ -194,7 +194,7 @@ export const handleWebhookTEST = (req, res) => {
                     (err) => {
                         if (err) {
                             console.error('[Webhook] Booking update error:', err);
-                            return res.sendStatus(500);
+                            return response.serverError(res, "Booking update error", err);
                         }
 
                         db.query(
@@ -203,7 +203,7 @@ export const handleWebhookTEST = (req, res) => {
                             (err) => {
                                 if (err) {
                                     console.error('[Webhook] Booking update error:', err);
-                                    return res.sendStatus(500);
+                                    return response.serverError(res, "Booking update error", err);
                                 }
 
                                 console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
@@ -216,7 +216,7 @@ export const handleWebhookTEST = (req, res) => {
         );
     } catch (err) {
         console.error('[Webhook] Error:', err);
-        return res.sendStatus(500);
+        return response.serverError(res, "Database error", err);
     }
 };
 
