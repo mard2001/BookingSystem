@@ -93,15 +93,39 @@ export const AppointmentFormProvider = ({ children }) => {
     };
 
     const updateContactInfoSelected = (field, value) => {
-        setFormData(prev => ({ ...prev, contactPersonInfo: { ...prev.contactPersonInfo, [field]: value } }))
+        setFormData(prev => (
+            { ...prev, 
+                contactPersonInfo: 
+                { 
+                    ...prev.contactPersonInfo, 
+                    [field]: value 
+                } 
+            }
+        ))
     }
 
     const updatePaymentMethod = (method) => {
-        setFormData(prev => ({...prev, paymentInfo: { ...prev.paymentInfo, paymentMethod: method }}));
+        setFormData(prev => (
+            {
+                ...prev, 
+                paymentInfo: { 
+                    ...prev.paymentInfo,
+                    paymentMethod: method 
+                }
+            }
+        ));
     };
 
     const updateBookingResult = (bookingID, totalAmount) => {
-        setFormData(prev => ({...prev,paymentInfo: { ...prev.paymentInfo, bookingID, totalAmount }}));
+        setFormData(prev => (
+            {
+                ...prev,
+                paymentInfo: { 
+                    ...prev.paymentInfo, 
+                    bookingID, totalAmount 
+                }
+            }
+        ));
     };
 
     const nextStep = () => {
