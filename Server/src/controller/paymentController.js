@@ -153,7 +153,7 @@ export const handleWebhookTEST = (req, res) => {
             const computed = crypto
                 .createHmac('sha256', process.env.PAYMONGO_WEBHOOK_SECRET)
                 .update(`${timestamp}.${rawBody}`)
-                .digest('hex');
+                .digest('hex'); 
 
             if (computed !== receivedSig) return response.badRequest(res, 'Invalid signature.');
         } catch (err) {
