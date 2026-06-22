@@ -182,7 +182,7 @@ export const getPaymentStatus = (req, res) => {
         }
 
         return response.ok(res, 'Payment status retrieved.', {
-            status: booking_status,
+            status: payment_status,
             bookingID: booking_id,
         });
         }
