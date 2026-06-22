@@ -125,7 +125,7 @@ export const getPaymentStatus = (req, res) => {
     const { intentId } = req.params;
     if (!intentId) return response.badRequest(res, 'Payment intent ID is required.');
 
-    const findBooking = 'SELECT bookingID, payment_status, status FROM tbl_booking_payment WHERE payment_intent_id = ? LIMIT 1';
+    const findBooking = 'SELECT bookingID, payment_status, status FROM tbl_booking_payment WHERE payment_intent_id = ?';
 
     db.query( findBooking, [intentId], async (err, results) => {
         if (err) return response.serverError(res, 'Failed to retrieve payment status.', err);
