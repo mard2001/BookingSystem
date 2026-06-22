@@ -28,13 +28,12 @@ export const usePayment = ({ onPaymentSuccess }) => {
 
     // Poll for payment confirmation
     useEffect(() => {
-        if (!bookingID || paymentState !== 'awaiting') return;
+        if (!intentId || paymentState !== 'awaiting') return;
 
         pollRef.current = setInterval(async () => {
             try {
-                const res = await getBookingPaymentStatus(bookingID);
-                console.log('poll res:', res);  
-                if (res?.data?.status === 'confirmed') {  
+                const res = await getBookingPaymentStatus(intentId); // ← pass intentId
+                if (res?.data?.status === 'confirmed') {
                     clearTimers();
                     setPaymentState('paid');
                     onPaymentSuccessRef.current?.();
@@ -45,7 +44,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
         }, POLL_INTERVAL_MS);
 
         return () => clearInterval(pollRef.current);
-    }, [bookingID, paymentState]);
+    }, [intentId, paymentState]);
 
     // Countdown timer
     useEffect(() => {

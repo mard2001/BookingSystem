@@ -21,9 +21,9 @@ export const initiatePayment = async (bookingID, amount, customerName, customerE
     }
 }
 
-export const getBookingPaymentStatus = async (bookingID) => {
+export const getBookingPaymentStatus = async (intentID) => {
     try{
-        const res = await api.get(`/api/v1/payments/booking-status/${bookingID}`);
+        const res = await api.get(`/api/v1/payments/payment-status/${intentID}`);
         return res;
     } catch (error) {
         throw error;
