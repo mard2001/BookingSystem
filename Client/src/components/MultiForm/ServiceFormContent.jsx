@@ -8,7 +8,7 @@ import { getCourts } from "../../api/services/courtService";
 
 
 export const ServiceFormContent = () => {
-    const {formData, errors, updateCourtSelected} = useAppointmentFormContext();
+    const {formData, errors, updateCourtSelected, goToStep } = useAppointmentFormContext();
     const selectedCourt = formData.courtInfo.court;
     const [availableCourts, setAvailableCourts] = useState([]);
 
@@ -37,7 +37,11 @@ export const ServiceFormContent = () => {
                     return (
                         <div
                         key={"availableCourt" + court.courtID}
-                        onClick={() => !isReserved && updateCourtSelected(isSelected ? null : court)}
+                        onClick={() => {
+                            if (isReserved || isSelected) return;
+                            updateCourtSelected(court);
+                            setTimeout(() => goToStep(2), 500); // ← skips validateStep entirely
+                        }}
                         className={`border rounded-2xl p-5 shadow-xl/10 transition-all duration-300 cursor-pointer border-2
                             ${isReserved ? "opacity-60 cursor-not-allowed" : "hover:-translate-y-1"}
                             ${isSelected ? "border-primary bg-primary/5 " : "border-slate-200"}
