@@ -5,6 +5,7 @@ const QR_EXPIRY_SECONDS = 10 * 60;
 const POLL_INTERVAL_MS = 5000;
 
 export const usePayment = ({ onPaymentSuccess }) => {
+    const onPaymentSuccessRef = useRef(onPaymentSuccess);
     const [qrImage, setQrImage] = useState(null);
     const [intentId, setIntentId] = useState(null);
     const [paymentState, setPaymentState] = useState('idle');
@@ -21,6 +22,10 @@ export const usePayment = ({ onPaymentSuccess }) => {
         clearInterval(timerRef.current);
     };
 
+    useEffect(() => {
+        onPaymentSuccessRef.current = onPaymentSuccess;
+    }, [onPaymentSuccess]);
+
     // Poll for payment confirmation
     useEffect(() => {
         if (!bookingID || paymentState !== 'awaiting') return;
@@ -32,7 +37,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
                 if (res?.data?.status === 'paid') {  
                     clearTimers();
                     setPaymentState('paid');
-                    onPaymentSuccess?.();
+                    onPaymentSuccessRef.current?.();
                 }
             } catch {
                 // silent
@@ -40,7 +45,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
         }, POLL_INTERVAL_MS);
 
         return () => clearInterval(pollRef.current);
-    }, [bookingID, paymentState, onPaymentSuccess]);
+    }, [bookingID, paymentState]);
 
     // Countdown timer
     useEffect(() => {
@@ -59,6 +64,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
 
         return () => clearInterval(timerRef.current);
     }, [paymentState]);
+    
 
     const initiate = useCallback(async ({ bookingID, amount, customerName, customerEmail }) => {
         setPaymentState('loading');

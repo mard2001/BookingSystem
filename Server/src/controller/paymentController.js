@@ -122,21 +122,60 @@ export const initiatePayment = async (req, res) => {
 };
 
 export const getPaymentStatus = (req, res) => {
-    const { intentId } = req.params;
-    if (!intentId) return response.badRequest(res, 'Payment intent ID is required.');
+    const { bookingID } = req.params;
+    if (!bookingID) return response.badRequest(res, 'Booking ID is required.');
 
-    axios
-        .get(`${PAYMONGO_BASE}/payment_intents/${intentId}`, {
-            headers: { Authorization: authHeader() },
-        })
-        .then((pmRes) => {
-            const attrs = pmRes.data.data.attributes;
-            return response.ok(res, 'Payment status retrieved.', {
-                status: attrs.status,
-                intentId,
-            });
-        })
-        .catch((err) => response.serverError(res, 'Failed to retrieve payment status.', err));
+    db.query(
+        'SELECT booking_status, payment_intent_id FROM tbl_bookings WHERE booking_id = ? LIMIT 1',
+        [bookingID],
+        async (err, results) => {
+            if (err) return response.serverError(res, 'Failed to retrieve payment status.', err);
+            if (!results.length) return response.notFound(res, 'Booking not found.');
+
+            const { booking_status, payment_intent_id } = results[0];
+
+            // ✅ Already confirmed — return immediately, no PayMongo call needed
+            if (booking_status === 'confirmed') {
+                return response.ok(res, 'Payment status retrieved.', { status: 'confirmed' });
+            }
+
+            // ⚠️ Still pending — fallback to PayMongo to catch missed webhooks
+            if (booking_status === 'pending' && payment_intent_id) {
+                try {
+                    const pmRes = await axios.get(
+                        `${PAYMONGO_BASE}/payment_intents/${payment_intent_id}`,
+                        { headers: { Authorization: authHeader() } }
+                    );
+
+                    const pmStatus = pmRes.data.data.attributes.status;
+
+                    // PayMongo says paid but webhook never updated our DB — self-heal
+                    if (pmStatus === 'succeeded') {
+                        db.query(
+                            `UPDATE tbl_bookings SET booking_status = 'confirmed' WHERE booking_id = ?`,
+                            [bookingID],
+                            (updateErr) => {
+                                if (updateErr) console.error('Self-heal update failed:', updateErr);
+                            }
+                        );
+
+                        return response.ok(res, 'Payment status retrieved.', { status: 'confirmed' });
+                    }
+
+                    // PayMongo also says pending — genuinely still waiting
+                    return response.ok(res, 'Payment status retrieved.', { status: booking_status });
+
+                } catch (pmErr) {
+                    // PayMongo call failed — return DB status as best effort
+                    console.error('PayMongo fallback failed:', pmErr.message);
+                    return response.ok(res, 'Payment status retrieved.', { status: booking_status });
+                }
+            }
+
+            // Any other status (cancelled, rejected, etc.) — just return it
+            return response.ok(res, 'Payment status retrieved.', { status: booking_status });
+        }
+    );
 };
 
 export const handleWebhookTEST = (req, res) => {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { usePayment } from '../../hooks/usePayment';
 import { CircleCheck, ClockAlertIcon, QrCodeIcon, RefreshCcw, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -6,10 +6,13 @@ import { addOneHour, formatSlotTime } from '../../utils/ValueFormat';
 
 export default function QRPayment({ booking, onClose, onPaymentSuccess, onIntentCreated }) {
     console.log("booking", booking)
+
+    const handlePaymentSuccess = useCallback(() => {
+        onPaymentSuccess?.();
+    }, [onPaymentSuccess]);
+
     const { qrImage, intentId, paymentState, formattedTime, errorMessage, initiate, reset } = usePayment({
-        onPaymentSuccess: () => {
-            onPaymentSuccess?.();
-        },
+        onPaymentSuccess: handlePaymentSuccess,
     });
 
     const formattedTimes = () => {

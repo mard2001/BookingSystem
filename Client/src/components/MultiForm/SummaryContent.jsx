@@ -144,6 +144,13 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
         cancelBookingInitiation(qrBooking?.bookingID, paymentIntentID);
     }
 
+    const handleQRPaymentSuccess = useCallback(() => {
+        setShowQR(false);
+        setIsConfirmed(true);
+        setIsConfirmBooking({ bookingID: qrBooking.bookingID });
+        onSuccess?.();
+    }, [qrBooking?.bookingID, onSuccess]);
+
     return (
         <>
             {!isConfirmed ?
@@ -288,12 +295,8 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                 <QRPayment
                     booking={qrBooking}
                     onClose={handleCloseQRPayment}
-                    onPaymentSuccess={() => {
-                        setShowQR(false);
-                        setIsConfirmed(true);
-                        setIsConfirmBooking({ bookingID: qrBooking.bookingID });
-                        onSuccess?.();
-                    }}
+                    onPaymentSuccess={handleQRPaymentSuccess}
+                    onIntentCreated={setPaymentIntentID}
                 />
             )}
         </>
