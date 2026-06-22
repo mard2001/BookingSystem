@@ -122,58 +122,70 @@ export const initiatePayment = async (req, res) => {
 };
 
 export const getPaymentStatus = (req, res) => {
-    const { bookingID } = req.params;
-    if (!bookingID) return response.badRequest(res, 'Booking ID is required.');
+    const { intentId } = req.params;
+    if (!intentId) return response.badRequest(res, 'Payment intent ID is required.');
 
     db.query(
-        'SELECT booking_status, payment_intent_id FROM tbl_bookings WHERE booking_id = ? LIMIT 1',
-        [bookingID],
+        'SELECT booking_status, booking_id FROM tbl_bookings WHERE payment_intent_id = ? LIMIT 1',
+        [intentId],
         async (err, results) => {
             if (err) return response.serverError(res, 'Failed to retrieve payment status.', err);
             if (!results.length) return response.notFound(res, 'Booking not found.');
 
-            const { booking_status, payment_intent_id } = results[0];
+            const { booking_status, booking_id } = results[0];
 
-            // ✅ Already confirmed — return immediately, no PayMongo call needed
+            // ✅ Already confirmed — return immediately
             if (booking_status === 'confirmed') {
-                return response.ok(res, 'Payment status retrieved.', { status: 'confirmed' });
+                return response.ok(res, 'Payment status retrieved.', {
+                    status: 'confirmed',
+                    bookingID: booking_id,
+                });
             }
 
-            // ⚠️ Still pending — fallback to PayMongo to catch missed webhooks
-            if (booking_status === 'pending' && payment_intent_id) {
+            // ⚠️ Still pending — fallback to PayMongo
+            if (booking_status === 'pending') {
                 try {
                     const pmRes = await axios.get(
-                        `${PAYMONGO_BASE}/payment_intents/${payment_intent_id}`,
+                        `${PAYMONGO_BASE}/payment_intents/${intentId}`,
                         { headers: { Authorization: authHeader() } }
                     );
 
                     const pmStatus = pmRes.data.data.attributes.status;
 
-                    // PayMongo says paid but webhook never updated our DB — self-heal
                     if (pmStatus === 'succeeded') {
+                        // Self-heal missed webhook
                         db.query(
-                            `UPDATE tbl_bookings SET booking_status = 'confirmed' WHERE booking_id = ?`,
-                            [bookingID],
+                            `UPDATE tbl_bookings SET booking_status = 'confirmed' WHERE payment_intent_id = ?`,
+                            [intentId],
                             (updateErr) => {
                                 if (updateErr) console.error('Self-heal update failed:', updateErr);
                             }
                         );
 
-                        return response.ok(res, 'Payment status retrieved.', { status: 'confirmed' });
+                        return response.ok(res, 'Payment status retrieved.', {
+                            status: 'confirmed',
+                            bookingID: booking_id,
+                        });
                     }
 
-                    // PayMongo also says pending — genuinely still waiting
-                    return response.ok(res, 'Payment status retrieved.', { status: booking_status });
+                    return response.ok(res, 'Payment status retrieved.', {
+                        status: booking_status,
+                        bookingID: booking_id,
+                    });
 
                 } catch (pmErr) {
-                    // PayMongo call failed — return DB status as best effort
                     console.error('PayMongo fallback failed:', pmErr.message);
-                    return response.ok(res, 'Payment status retrieved.', { status: booking_status });
+                    return response.ok(res, 'Payment status retrieved.', {
+                        status: booking_status,
+                        bookingID: booking_id,
+                    });
                 }
             }
 
-            // Any other status (cancelled, rejected, etc.) — just return it
-            return response.ok(res, 'Payment status retrieved.', { status: booking_status });
+            return response.ok(res, 'Payment status retrieved.', {
+                status: booking_status,
+                bookingID: booking_id,
+            });
         }
     );
 };
