@@ -34,7 +34,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
             try {
                 const res = await getBookingPaymentStatus(bookingID);
                 console.log('poll res:', res);  
-                if (res?.data?.status === 'paid') {  
+                if (res?.data?.status === 'confirmed') {  
                     clearTimers();
                     setPaymentState('paid');
                     onPaymentSuccessRef.current?.();

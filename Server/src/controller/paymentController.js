@@ -125,67 +125,66 @@ export const getPaymentStatus = (req, res) => {
     const { intentId } = req.params;
     if (!intentId) return response.badRequest(res, 'Payment intent ID is required.');
 
-    db.query(
-        'SELECT booking_status, booking_id FROM tbl_bookings WHERE payment_intent_id = ? LIMIT 1',
-        [intentId],
-        async (err, results) => {
-            if (err) return response.serverError(res, 'Failed to retrieve payment status.', err);
-            if (!results.length) return response.notFound(res, 'Booking not found.');
+    const findBooking = 'SELECT bookingID, payment_status, status FROM tbl_booking_payment WHERE payment_intent_id = ? LIMIT 1';
 
-            const { booking_status, booking_id } = results[0];
+    db.query( findBooking, [intentId], async (err, results) => {
+        if (err) return response.serverError(res, 'Failed to retrieve payment status.', err);
+        if (!results.length) return response.notFound(res, 'Booking not found.');
 
-            // ✅ Already confirmed — return immediately
-            if (booking_status === 'confirmed') {
-                return response.ok(res, 'Payment status retrieved.', {
-                    status: 'confirmed',
-                    bookingID: booking_id,
-                });
-            }
+        const { payment_status, booking_id } = results[0];
 
-            // ⚠️ Still pending — fallback to PayMongo
-            if (booking_status === 'pending') {
-                try {
-                    const pmRes = await axios.get(
-                        `${PAYMONGO_BASE}/payment_intents/${intentId}`,
-                        { headers: { Authorization: authHeader() } }
+        // ✅ Already confirmed — return immediately
+        if (payment_status === 'paid') {
+            return response.ok(res, 'Payment status retrieved.', {
+                status: 'paid',
+                bookingID: booking_id,
+            });
+        }
+
+        // ⚠️ Still pending — fallback to PayMongo
+        if (payment_status === 'initiated') {
+            try {
+                const pmRes = await axios.get(
+                    `${PAYMONGO_BASE}/payment_intents/${intentId}`,
+                    { headers: { Authorization: authHeader() } }
+                );
+
+                const pmStatus = pmRes.data.data.attributes.status;
+
+                if (pmStatus === 'succeeded') {
+                    // Self-heal missed webhook
+                    db.query(
+                        `UPDATE tbl_booking_payment SET payment_status = 'paid' WHERE payment_intent_id = ?`,
+                        [intentId],
+                        (updateErr) => {
+                            if (updateErr) console.error('Self-heal update failed:', updateErr);
+                        }
                     );
 
-                    const pmStatus = pmRes.data.data.attributes.status;
-
-                    if (pmStatus === 'succeeded') {
-                        // Self-heal missed webhook
-                        db.query(
-                            `UPDATE tbl_bookings SET booking_status = 'confirmed' WHERE payment_intent_id = ?`,
-                            [intentId],
-                            (updateErr) => {
-                                if (updateErr) console.error('Self-heal update failed:', updateErr);
-                            }
-                        );
-
-                        return response.ok(res, 'Payment status retrieved.', {
-                            status: 'confirmed',
-                            bookingID: booking_id,
-                        });
-                    }
-
                     return response.ok(res, 'Payment status retrieved.', {
-                        status: booking_status,
-                        bookingID: booking_id,
-                    });
-
-                } catch (pmErr) {
-                    console.error('PayMongo fallback failed:', pmErr.message);
-                    return response.ok(res, 'Payment status retrieved.', {
-                        status: booking_status,
+                        status: 'confirmed',
                         bookingID: booking_id,
                     });
                 }
-            }
 
-            return response.ok(res, 'Payment status retrieved.', {
-                status: booking_status,
-                bookingID: booking_id,
-            });
+                return response.ok(res, 'Payment status retrieved.', {
+                    status: payment_status,
+                    bookingID: booking_id,
+                });
+
+            } catch (pmErr) {
+                console.error('PayMongo fallback failed:', pmErr.message);
+                return response.ok(res, 'Payment status retrieved.', {
+                    status: payment_status,
+                    bookingID: booking_id,
+                });
+            }
+        }
+
+        return response.ok(res, 'Payment status retrieved.', {
+            status: booking_status,
+            bookingID: booking_id,
+        });
         }
     );
 };
