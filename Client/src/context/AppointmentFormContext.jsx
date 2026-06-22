@@ -157,7 +157,7 @@ export const AppointmentFormProvider = ({ children }) => {
         { id:"2", key:"step2", icon: CalendarClockIcon, title:"Date & Time", description:"Pick Date & Time" },
         { id:"3", key:"step3", icon: FileText, title:"Contact Information", description:"Basic Information" },
         { id:"4", key:"step4", icon: ClipboardCheck, title:"Summary", description:"Final Checking" },
-        { id:"5", key:"step5", icon: BanknoteArrowDown, title:"Payment",description:"Complete Payment" }, 
+        // { id:"5", key:"step5", icon: BanknoteArrowDown, title:"Payment",description:"Complete Payment" }, 
     ];
 
     const value = { steps, currentStep, formData, errors, updateCourtSelected, updateDateTimeSelected, updateContactInfoSelected, updatePaymentMethod, updateBookingResult, nextStep, prevStep, resetForm, goToStep };

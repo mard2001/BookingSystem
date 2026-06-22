@@ -33,7 +33,7 @@ export const usePayment = ({ onPaymentSuccess }) => {
         pollRef.current = setInterval(async () => {
             try {
                 const res = await getBookingPaymentStatus(intentId); // ← pass intentId
-                if (res?.data?.status === 'confirmed') {
+                if (res?.data?.status === 'paid') {
                     clearTimers();
                     setPaymentState('paid');
                     onPaymentSuccessRef.current?.();

@@ -118,18 +118,20 @@ export const MultiStepForm = ({ onSuccess }) => {
                     Previous
                 </button> 
 
-                {currentStep < steps.length - 1 ? (
+                {currentStep < steps.length ? (
                     <button onClick={nextStep} className={`flex items-center px-8 py-4 rounded-2xl font-semibold transition-all duration-200 hover:inset-shadow-sm hover:shadow-lg hover:-translate-y-1 hover:cursor-pointer`}>
                         Next
                         <ChevronRightIcon className='w-5 h-5 ml-2' />
                     </button>
-                ) : currentStep === steps.length - 1 ? (
+                ) : currentStep === steps.length ? (
                     <button
                         onClick={() => confirmBookingFn?.()}
                         disabled={isChecking || isSubmitting}
                         className={`flex items-center px-10 py-4  text-white
                                     rounded-2xl font-semibold transition-all duration-200 shadow-lg  
-                                    ${isChecking || isSubmitting ? 'bg-secondary/50': 'bg-gradient-to-r from-primary to-primary-brighter hover:from-primary-brighter hover:to-primary hover:cursor-pointer hover:shadow:lg transform hover:-translate-y-1'}`}
+                                    ${isChecking || isSubmitting ? 'bg-secondary/50': 'bg-gradient-to-r from-primary to-primary-brighter hover:from-primary-brighter hover:to-primary hover:cursor-pointer hover:shadow:lg transform hover:-translate-y-1'}
+                                    ${isConfirmed ? 'hidden': ''}
+                                    `}
                     >
                         {isChecking
                             ? 'Checking availability...'
