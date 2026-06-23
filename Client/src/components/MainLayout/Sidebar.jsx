@@ -39,7 +39,7 @@ export const Sidebar = () => {
       children: [
         { label: "All Bookings", path: "/bookings" },
         { label: "Calendar View", path: "/bookings/calendar" },
-        // { label: "Walk-ins", path: "/bookings/walkins" },
+        { label: "Regular Schedules", path: "/bookings/regular-reservation" },
       ]
     },
     { label: "Courts", icon: MapPin, path: "/courts", roles: ["superadmin", "admin", "staff"] },

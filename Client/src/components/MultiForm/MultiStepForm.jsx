@@ -5,7 +5,6 @@ import { ServiceFormContent } from './ServiceFormContent'
 import { DateTimeContent } from './DateTimeContent'
 import { ContactInfoContent } from './ContactInfoContent'
 import { SummaryContent } from './SummaryContent'
-import { QRPaymentContent } from './QRPaymentContent'
 
 
 
@@ -32,8 +31,6 @@ export const MultiStepForm = ({ onSuccess }) => {
                 return <ContactInfoContent />
             case 4: 
                 return <SummaryContent setIsChecking={setIsChecking} setIsSubmitting={setIsSubmitting} isConfirmed={isConfirmed} setIsConfirmed={setIsConfirmed} onSuccess={onSuccess} onConfirm={(fn) => setConfirmBookingFn(() => fn)} />
-            case 5: 
-                return <QRPaymentContent totalAmount={formData.paymentInfo.totalAmount} onPaid={onSuccess} />
             default:
                 null
         }

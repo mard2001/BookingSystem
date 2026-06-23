@@ -9,6 +9,7 @@ import { BookingsCalendarPage } from '../pages/BookingsCalendarPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { ADMIN_ROLES, ALL_ROLES } from '../constants/contants'
 import { ClosurePage } from '../pages/ClosurePage'
+import { RegularReservationPage } from '../pages/RegularReservationPage'
 
 export const ProtectedRoutes = [
     {
@@ -44,6 +45,18 @@ export const ProtectedRoutes = [
             </ProtectedRouteChecker>
         )
     },
+    {
+        key:"RegularReservationPage",
+        path: "/bookings/regular-reservation",
+        element:(
+            <ProtectedRouteChecker allowedRoles={ADMIN_ROLES}>
+                <MainLayout>
+                    <RegularReservationPage />
+                </MainLayout>
+            </ProtectedRouteChecker>
+        )
+    },
+
     {
         key:"courtsPage",
         path: "/courts",

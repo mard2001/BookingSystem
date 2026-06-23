@@ -6,6 +6,7 @@ import courtRouter from './src/routes/courtRouter.js';
 import authRouter from './src/routes/authRouter.js';
 import bookingRouter from './src/routes/bookingRouter.js';
 import paymentRouter from './src/routes/paymentRouter.js';
+import dashboardRouter from './src/routes/dashboardRouter.js';
 
 const app = express();
 app.use(cors({
@@ -24,9 +25,10 @@ app.use("/api/v1/payments/webhook", express.raw({ type: 'application/json' }));
 
 app.use(express.json());
 
-app.use("/api/v1/courts", courtRouter);
 app.use("/api/v1/users", authRouter);
 app.use("/api/v1/bookings", bookingRouter);
+app.use("/api/v1/courts", courtRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/payments", paymentRouter);
 
 
