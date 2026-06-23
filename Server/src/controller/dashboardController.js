@@ -62,7 +62,7 @@ export const getUpcomingReservations = (req, res) => {
         JOIN tbl_courts c ON b.courtID = c.courtID
         JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
         WHERE 
-            b.status IN ('confirmed','completed')
+            b.status IN ('confirmed','pending')
             AND b.bookingDate >= CURDATE()
         GROUP BY 
             b.bookingID, b.bookerFullName, b.bookingDate, 
@@ -85,7 +85,7 @@ export const getBookingMonthlyRevenue = (req, res) => {
                 FROM tbl_bookings b
                 WHERE
                     b.bookingDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-                    AND b.status IN ('confirmed','completed')
+                    AND b.status IN ('confirmed', 'completed')
                 GROUP BY
                     DATE_FORMAT(b.bookingDate, '%Y-%m'),
                     DATE_FORMAT(b.bookingDate, '%b %Y')
@@ -107,7 +107,7 @@ export const getSportRevenue = (req, res) => {
                 FROM tbl_bookings b
                 JOIN tbl_courts c ON b.courtID = c.courtID
                 WHERE
-                    b.status IN ('confirmed', 'pending')
+                    b.status IN ('confirmed', 'completed')
                     AND b.bookingDate >= CURDATE()
                 GROUP BY
                     c.courtID,
