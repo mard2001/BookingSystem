@@ -109,8 +109,8 @@ export const DashboardPage = () => {
         const status = getValue();
 
         const statusMap = {
-          'confirmed': { label: "Confirmed", style: "bg-green-100 text-green-700" },
-          'pending': { label: "Pending", style: "bg-yellow-100 text-yellow-700" },
+          'confirmed': { label: "Confirmed", style: "bg-green-200 text-green-700" },
+          'pending': { label: "Pending Payment", style: "bg-primary text-white" },
         };
 
         const { label, style } = statusMap[status] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
