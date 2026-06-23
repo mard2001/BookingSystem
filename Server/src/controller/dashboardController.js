@@ -108,7 +108,7 @@ export const getSportRevenue = (req, res) => {
                 JOIN tbl_courts c ON b.courtID = c.courtID
                 WHERE
                     b.status IN ('confirmed', 'completed')
-                    AND b.bookingDate >= CURDATE()
+                    AND b.bookingDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
                 GROUP BY
                     c.courtID,
                     c.courtLabel,
