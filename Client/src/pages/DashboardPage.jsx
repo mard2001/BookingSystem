@@ -6,11 +6,15 @@ import { useEffect } from 'react';
 import { StatsGrid } from "../components/StatsGrid";
 import { getExportFilename } from '../utils/ExportTable';
 import { DataTable } from '../components/DataTable';
-import { getAllStats, getUpcomingReservations } from '../api/services/dashboardService';
+import { fetchBookingRevenue, fetcRevenueBySport, getAllStats, getUpcomingReservations } from '../api/services/dashboardService';
 import { addOneHour, formatCurrency, formatSlotTime, getTimeRange, shortFormatReadableDate } from '../utils/ValueFormat';
+import BookingsRevenueChart from '../components/Charts/BookingsRevenueChart';
+import RevenueBySportDonutChart from '../components/Charts/RevenueBySportDonutChart';
 
 export const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
+  const [bookingRevenueData, setBookingRevenueData] = useState(null);
+  const [revenueBySportData, setRevenueBySportData] = useState(null);
   const [upcomingReservData, setUpcomingReservData] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [dataTableLoading, setDataTableLoading] = useState(false);
@@ -19,6 +23,8 @@ export const DashboardPage = () => {
   useEffect(()=>{
     fetchStatisticsData();
     fetchUpcomingReservationData();
+    fetchBookingRevenueData();
+    fetchRevenueBySportData();
   },[]);
 
   const fetchStatisticsData = async () => {
@@ -34,6 +40,24 @@ export const DashboardPage = () => {
     try {
       const res = await getUpcomingReservations();
       setUpcomingReservData(res.data);
+    } catch (error) {
+      setError("Failed to load statistics.");
+    }
+  }
+
+  const fetchBookingRevenueData = async () => {
+    try {
+      const res = await fetchBookingRevenue();
+      setBookingRevenueData(res.data);
+    } catch (error) {
+      setError("Failed to load statistics.");
+    }
+  }
+
+  const fetchRevenueBySportData = async () => {
+    try {
+      const res = await fetcRevenueBySport();
+      setRevenueBySportData(res.data);
     } catch (error) {
       setError("Failed to load statistics.");
     }
@@ -110,7 +134,7 @@ export const DashboardPage = () => {
 
         const statusMap = {
           'confirmed': { label: "Confirmed", style: "bg-green-200 text-green-700" },
-          'pending': { label: "Pending Payment", style: "bg-primary text-white" },
+          'pending': { label: "Pending Payment", style: "bg-primary/70 text-white" },
         };
 
         const { label, style } = statusMap[status] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
@@ -182,6 +206,26 @@ export const DashboardPage = () => {
                         <span>No recent activity as of the moment ...</span>
                     </div>
                 )}
+            </div>
+          </div>
+
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
+            <div className='lg:col-span-3 bg-card p-5 rounded-2xl shadow-xl mb-5'>
+              <div className='mb-5 flex items-center justify-between'>
+                <p className='text-primary font-semibold '>Booking Trends (Last 12 months)</p>
+              </div>
+              {bookingRevenueData && (
+                <BookingsRevenueChart data={bookingRevenueData} />
+              )}
+            </div>
+
+            <div className='lg:col-span-2 bg-card p-5 rounded-2xl shadow-xl mb-5'>
+              <div className='mb-5 flex items-center justify-between'>
+                <p className='text-primary font-semibold '>Revenue by Sport</p>
+              </div>
+              {bookingRevenueData && (
+                <RevenueBySportDonutChart data={revenueBySportData} />
+              )}
             </div>
           </div>
 

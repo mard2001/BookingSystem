@@ -4,9 +4,9 @@ import 'dotenv/config';
 
 export const dashboardStats = (req, res) => {
     const queries = [
-        db.promise().query('SELECT COUNT(*) as totalBookings, SUM(totalAmount) as totalRevenue FROM tbl_bookings WHERE status NOT IN ("deleted","cancelled")'),
-        db.promise().query('SELECT COUNT(*) as totalCustomer FROM tbl_accounts WHERE userType = "customer"'),
-        db.promise().query('SELECT COUNT(*) as totalActiveCourts FROM tbl_courts WHERE isActive = 1'),
+        db.promise().query('SELECT COUNT(*) AS totalBookings, SUM(totalAmount) as totalRevenue FROM tbl_bookings WHERE status NOT IN ("deleted","cancelled")'),
+        db.promise().query('SELECT COUNT(*) AS totalCustomer FROM tbl_accounts WHERE userType = "customer"'),
+        db.promise().query('SELECT COUNT(*) AS totalActiveCourts FROM tbl_courts WHERE isActive = 1'),
         db.promise().query(`
             SELECT 
                 COUNT(bs.slotTime) AS bookedHours,
@@ -75,3 +75,48 @@ export const getUpcomingReservations = (req, res) => {
         return response.ok(res, 'Upcoming reservations retrieved.', results);
     });
 };
+
+export const getBookingMonthlyRevenue = (req, res) => {
+    const sql = `SELECT
+                    DATE_FORMAT(b.bookingDate, '%Y-%m') AS month,
+                    DATE_FORMAT(b.bookingDate, '%b %Y') AS month_label,
+                    COUNT(b.bookingID) AS total_bookings,
+                    COALESCE(SUM(b.totalAmount), 0) AS total_revenue
+                FROM tbl_bookings b
+                WHERE
+                    b.bookingDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                    AND b.status NOT IN ('cancelled', 'rejected')
+                GROUP BY
+                    DATE_FORMAT(b.bookingDate, '%Y-%m'),
+                    DATE_FORMAT(b.bookingDate, '%b %Y')
+                ORDER BY
+                    month ASC`;
+
+    db.query(sql, (err, result)=> {
+        if(err) return response.serverError(res, 'Failed to retrieve booking revenue data.', err);
+        
+        return response.ok(res, 'Booking revenue retrieved.', result);
+    })
+}
+
+export const getSportRevenue = (req, res) => {
+    const sql = `SELECT
+                    c.courtLabel,
+                    c.courtSport,
+                    COALESCE(SUM(b.totalAmount), 0) AS total_sport_revenue
+                FROM tbl_bookings b
+                JOIN tbl_courts c ON b.courtID = c.courtID
+                WHERE
+                    b.status IN ('confirmed', 'pending')
+                    AND b.bookingDate >= CURDATE()
+                GROUP BY
+                    c.courtID,
+                    c.courtLabel,
+                    c.courtSport`;
+
+    db.query(sql, (err, result)=> {
+        if(err) return response.serverError(res, 'Failed to retrieve revenue per sport/court data.', err);
+        
+        return response.ok(res, 'Revenue per sport/court data retrieved.', result);
+    })
+}
