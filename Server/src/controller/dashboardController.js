@@ -65,7 +65,7 @@ export const getUpcomingReservations = (req, res) => {
             b.status IN ('confirmed','pending')
             AND b.bookingDate >= CURDATE()
         GROUP BY 
-            b.bookingID, b.bookerFullName, b.bookingDate, 
+            b.bookingID, b.bookerFullName,b.bookerContactNumber, b.bookerEmail,  b.bookingDate, 
             b.totalAmount, b.paymentMethod, b.status,
             c.courtLabel, c.courtSport
         ORDER BY b.bookingDate ASC, MIN(bs.slotTime) ASC`;
