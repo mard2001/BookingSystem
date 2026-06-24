@@ -1,39 +1,14 @@
 // components/charts/BookingsRevenueChart.jsx
 
-import {
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend} from "recharts";
+import { formatCurrency, formatShortenCurrency } from "../../utils/ValueFormat";
 
-const formatPeso = (value) =>
-  `₱${Number(value || 0).toLocaleString()}`;
-
-const formatK = (value) => {
-  const num = Number(value || 0);
-
-  if (num >= 1000) {
-    return `₱${(num / 1000).toFixed(0)}k`;
-  }
-
-  return `₱${num}`;
-};
-
-export default function BookingsRevenueChart({
-  data = [],
-  height = 320,
-}) {
+export default function BookingsRevenueChart({data = [], chartHeight}) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 24, left: 8, bottom: 8 }}
+        margin={{ top: 18, right: 24, left: 8, bottom: 32 }}
       >
         <CartesianGrid
           strokeDasharray="3 3"
@@ -43,9 +18,10 @@ export default function BookingsRevenueChart({
 
         <XAxis
           dataKey="month_label"
-          tick={{ fontSize: 12 }}
-          tickLine={false}
-          axisLine={false}
+          tick={{ fontSize: 12, angle: -35, textAnchor: "end", dy:10 }}
+          tickLine={true}
+          axisLine={true}
+          interval={0} 
         />
 
         <YAxis
@@ -53,8 +29,8 @@ export default function BookingsRevenueChart({
           orientation="left"
           allowDecimals={false}
           tick={{ fontSize: 12 }}
-          tickLine={false}
-          axisLine={false}
+          tickLine={true}
+          axisLine={true}
           label={{
             value: "Bookings",
             angle: -90,
@@ -67,7 +43,7 @@ export default function BookingsRevenueChart({
         <YAxis
           yAxisId="revenue"
           orientation="right"
-          tickFormatter={formatK}
+          tickFormatter={formatShortenCurrency}
           tick={{ fontSize: 12 }}
           tickLine={false}
           axisLine={false}
@@ -84,14 +60,14 @@ export default function BookingsRevenueChart({
           labelFormatter={(label) => `Month: ${label}`}
           formatter={(value, name) => {
             if (name === "Revenue") {
-              return [formatPeso(value), "Revenue"];
+              return [formatCurrency(value), "Revenue"];
             }
 
             return [value, "Bookings"];
           }}
         />
 
-        <Legend />
+        <Legend  wrapperStyle={{ paddingTop: 55 }}/>
 
         <Bar
           yAxisId="bookings"

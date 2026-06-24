@@ -1,30 +1,11 @@
 // components/charts/RevenueBySportDonutChart.jsx
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import {PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer} from "recharts";
+import { formatCurrency } from "../../utils/ValueFormat";
 
-const COLORS = [
-  "#378ADD",
-  "#1D9E75",
-  "#F59E0B",
-  "#EF4444",
-  "#8B5CF6",
-  "#06B6D4",
-];
+const COLORS = ["#378ADD", "#1D9E75", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"];
 
-const formatPeso = (value) =>
-  `₱${Number(value || 0).toLocaleString()}`;
-
-export default function RevenueBySportDonutChart({
-  data = [],
-  height = 320,
-}) {
+export default function RevenueBySportDonutChart({data = [], chartHeight}) {
   // Group revenue by sport
   const chartData = Object.values(
     data.reduce((acc, item) => {
@@ -44,7 +25,7 @@ export default function RevenueBySportDonutChart({
   );
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <PieChart>
         <Pie
           data={chartData}
@@ -68,7 +49,7 @@ export default function RevenueBySportDonutChart({
         </Pie>
 
         <Tooltip
-          formatter={(value) => [formatPeso(value), "Revenue"]}
+          formatter={(value) => [formatCurrency(value), "Revenue"]}
         />
 
         <Legend />

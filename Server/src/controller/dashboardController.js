@@ -4,7 +4,7 @@ import 'dotenv/config';
 
 export const dashboardStats = (req, res) => {
     const queries = [
-        db.promise().query('SELECT COUNT(*) AS totalBookings, SUM(totalAmount) as totalRevenue FROM tbl_bookings WHERE status NOT IN ("deleted","cancelled")'),
+        db.promise().query('SELECT COUNT(*) AS totalBookings, SUM(totalAmount) as totalRevenue FROM tbl_bookings WHERE status NOT IN ("deleted","cancelled","pending")'),
         db.promise().query('SELECT COUNT(*) AS totalCustomer FROM tbl_accounts WHERE userType = "customer"'),
         db.promise().query('SELECT COUNT(*) AS totalActiveCourts FROM tbl_courts WHERE isActive = 1'),
         db.promise().query(`
@@ -28,10 +28,24 @@ export const dashboardStats = (req, res) => {
                 AND MONTH(b.bookingDate) = MONTH(NOW())
                 AND YEAR(b.bookingDate) = YEAR(NOW());
         `),
+        db.promise().query(`SELECT 
+                                status,
+                                COUNT(*) AS totalBookings
+                            FROM tbl_bookings
+                            WHERE status IN ('pending', 'cancelled', 'confirmed', 'completed')
+                                AND bookingDate >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                                AND bookingDate < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
+                            GROUP BY status;`)
     ];
 
     Promise.all(queries)
-        .then(([[bookings], [customers], [courts], [occupancy]]) => {
+        .then(([[bookings], [customers], [courts], [occupancy], [statusRows]]) => {
+
+            const statusMap = { pending: 0, cancelled: 0, confirmed: 0, completed: 0 };
+            statusRows.forEach(row => {
+                statusMap[row.status] = row.totalBookings;
+            });
+
             return response.ok(res, 'Dashboard stats retrieved.', {
                 totalBookings:     bookings[0].totalBookings,
                 totalRevenue:      bookings[0].totalRevenue ?? 0,
@@ -40,6 +54,10 @@ export const dashboardStats = (req, res) => {
                 bookedHours:       occupancy[0].bookedHours,
                 totalAvailableHours: occupancy[0].totalAvailableHours,
                 occupancyRate:     occupancy[0].occupancyRate ?? 0,
+                monthCancelled: statusMap.cancelled ?? 0,
+                monthPending: statusMap.pending ?? 0,
+                monthConfirmed: statusMap.confirmed ?? 0,
+                monthCompleted: statusMap.completed ?? 0,
             });
         })
         .catch(err => response.serverError(res, 'Failed to retrieve dashboard stats.', err));
@@ -77,20 +95,36 @@ export const getUpcomingReservations = (req, res) => {
 };
 
 export const getBookingMonthlyRevenue = (req, res) => {
-    const sql = `SELECT
-                    DATE_FORMAT(b.bookingDate, '%Y-%m') AS month,
-                    DATE_FORMAT(b.bookingDate, '%b %Y') AS month_label,
+    const sql = `WITH RECURSIVE month_series AS (
+                SELECT 
+                    DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 12 MONTH), '%Y-%m-01') AS month_start
+
+                UNION ALL
+
+                SELECT DATE_ADD(month_start, INTERVAL 1 MONTH)
+                FROM month_series
+                WHERE DATE_ADD(month_start, INTERVAL 1 MONTH) <= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+            ),
+            bookings_agg AS (
+                SELECT
+                    DATE_FORMAT(b.bookingDate, '%Y-%m-01') AS month_start,
                     COUNT(b.bookingID) AS total_bookings,
                     COALESCE(SUM(b.totalAmount), 0) AS total_revenue
                 FROM tbl_bookings b
                 WHERE
-                    b.bookingDate >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                    b.bookingDate >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
                     AND b.status IN ('confirmed', 'completed')
                 GROUP BY
-                    DATE_FORMAT(b.bookingDate, '%Y-%m'),
-                    DATE_FORMAT(b.bookingDate, '%b %Y')
-                ORDER BY
-                    month ASC`;
+                    DATE_FORMAT(b.bookingDate, '%Y-%m-01')
+            )
+            SELECT
+                DATE_FORMAT(ms.month_start, '%Y-%m') AS month,
+                DATE_FORMAT(ms.month_start, '%b %Y') AS month_label,
+                COALESCE(ba.total_bookings, 0) AS total_bookings,
+                COALESCE(ba.total_revenue, 0) AS total_revenue
+            FROM month_series ms
+            LEFT JOIN bookings_agg ba ON ba.month_start = ms.month_start
+            ORDER BY ms.month_start ASC;`;
 
     db.query(sql, (err, result)=> {
         if(err) return response.serverError(res, 'Failed to retrieve booking revenue data.', err);

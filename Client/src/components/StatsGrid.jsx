@@ -11,7 +11,7 @@ export const StatsGrid = ({ items = [], maxCols = 4 }) => {
   const lgCols = colsMap[maxCols] ?? "lg:grid-cols-4";
 
   return (
-    <div className="mt-10 mb-5">
+    <div className=" mb-5">
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgCols} gap-4`}>
         {items.map((item, index) => (
           <div key={index} className="bg-white rounded-2xl p-4 shadow-xl">

@@ -1,4 +1,4 @@
-import { BanknoteArrowDown, CalendarCheck, PercentCircleIcon, PhilippinePeso, RatioIcon, TicketPercent, User2, Users2Icon } from 'lucide-react';
+import { BanknoteArrowDown, CalendarCheck, CheckCheckIcon, CheckSquareIcon, HourglassIcon, LucideSquareX, PercentCircleIcon, PhilippinePeso, RatioIcon, TicketPercent, User2, Users2Icon } from 'lucide-react';
 import React from 'react'
 import { useState } from 'react';
 import { useMemo } from 'react';
@@ -14,7 +14,7 @@ import RevenueBySportDonutChart from '../components/Charts/RevenueBySportDonutCh
 export const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [bookingRevenueData, setBookingRevenueData] = useState(null);
-  const [revenueBySportData, setRevenueBySportData] = useState(null);
+  const [revenueBySportData, setRevenueBySportData] = useState([]);
   const [upcomingReservData, setUpcomingReservData] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [dataTableLoading, setDataTableLoading] = useState(false);
@@ -66,9 +66,16 @@ export const DashboardPage = () => {
   const dashboardStats = useMemo(() => [
     { icon: CalendarCheck, iconColor: "text-primary", label: "Total Bookings", value: Number(dashboardData?.totalBookings) || 0 },
     { icon: TicketPercent, iconColor: "text-primary", label: "Occupancy Rate", value: (dashboardData?.occupancyRate + "%") || "-" },
-    { icon: BanknoteArrowDown, iconColor: "text-primary", label: "Today's Revenue", value: formatCurrency(dashboardData?.totalRevenue) || 0 },
+    { icon: BanknoteArrowDown, iconColor: "text-primary", label: "Monthly Revenue", value: formatCurrency(dashboardData?.totalRevenue) || 0 },
     { icon: Users2Icon, iconColor: "text-primary", label: "Registered Customers", value: Number(dashboardData?.totalCustomers) || 0 },
     { icon: RatioIcon, iconColor: "text-primary", label: "Active Courts", value: Number(dashboardData?.totalActiveCourts) || 0 },
+  ], [dashboardData]);
+
+  const dashboardStatusStats = useMemo(() => [
+    { icon: HourglassIcon, iconColor: "text-primary", label: "Pending Bookings", value: Number(dashboardData?.monthPending) || 0 },
+    { icon: CheckSquareIcon, iconColor: "text-primary", label: "Confirmed Bookings", value: Number(dashboardData?.monthConfirmed) || 0 },
+    { icon: CheckCheckIcon, iconColor: "text-primary", label: "Completed Bookings", value: Number(dashboardData?.monthCompleted) || 0 },
+    { icon: LucideSquareX, iconColor: "text-primary", label: "Cancelled Bookings", value: Number(dashboardData?.monthCancelled) || 0 },
   ], [dashboardData]);
 
   const upcomingReservColumns = useMemo(() => [
@@ -154,6 +161,7 @@ export const DashboardPage = () => {
       <>
         <div>
           <StatsGrid items={dashboardStats} maxCols={5} />
+          <StatsGrid items={dashboardStatusStats} maxCols={4} />
 
           <div className='bg-card p-5 rounded-2xl shadow-xl mb-5'>
             <div className='mb-5 flex items-center justify-between'>
@@ -209,13 +217,13 @@ export const DashboardPage = () => {
             </div>
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-5 gap-1 lg:gap-4 '>
             <div className='lg:col-span-3 bg-card p-5 rounded-2xl shadow-xl mb-5'>
-              <div className='mb-5 flex items-center justify-between'>
+              <div className='mb-12 flex items-center justify-between'>
                 <p className='text-primary font-semibold '>Booking Trends (Last 12 months)</p>
               </div>
               {bookingRevenueData && (
-                <BookingsRevenueChart data={bookingRevenueData} />
+                <BookingsRevenueChart data={bookingRevenueData} chartHeight="300" />
               )}
             </div>
 
@@ -223,8 +231,8 @@ export const DashboardPage = () => {
               <div className='mb-5 flex items-center justify-between'>
                 <p className='text-primary font-semibold '>Revenue by Sport</p>
               </div>
-              {bookingRevenueData && (
-                <RevenueBySportDonutChart data={revenueBySportData} />
+              {revenueBySportData && (
+                <RevenueBySportDonutChart data={revenueBySportData} chartHeight="300" />
               )}
             </div>
           </div>

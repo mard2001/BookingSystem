@@ -73,6 +73,22 @@ export const formatCurrency = (value, currency = 'PHP', locale = 'en-PH') => {
     }).format(amount);
 };
 
+// "1500, 8600000"
+// "₱1,5k, ₱8,6M"
+export const formatShortenCurrency = (value) => {
+  const num = Number(value || 0);
+
+  if (num >= 1_000_000) {
+    return `₱${(num / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (num >= 1_000) {
+    return `₱${(num / 1_000).toFixed(0)}k`;
+  }
+
+  return `₱${num}`;
+};
+
 // "08:00, 09:00, 10:00"
 // { start: "08:00 AM", end: "10:00 AM" }
 export const getTimeRange = (timeSlots) => {
