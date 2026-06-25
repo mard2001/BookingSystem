@@ -1,5 +1,5 @@
 import { db } from '../../connect.js';
-import { getCurrentTimestamp } from '../utils/helpers.js';
+import { getCurrentTimestamp } from '../../utils/calculateValues.js';
 
 let isRunning = false;
 
