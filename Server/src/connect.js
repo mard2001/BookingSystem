@@ -17,3 +17,12 @@ export const getConnection = () => {
         });
     });
 };
+
+export const getPromiseConnection = () => {
+    return new Promise((resolve, reject) => {
+        db.getConnection((err, conn) => {
+            if (err) reject(err);
+            else resolve(conn.promise()); 
+        });
+    });
+};

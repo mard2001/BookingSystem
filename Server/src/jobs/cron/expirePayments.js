@@ -1,16 +1,14 @@
-import { db } from '../../connect.js';
+import { db, getPromiseConnection } from '../../connect.js';
 import { getCurrentTimestamp } from '../../utils/calculateValues.js';
 
 let isRunning = false;
 
 export const expireOverduePayments = async () => {
-    console.log('expireOverduePayments working');
-
     if (isRunning) return;
     isRunning = true;
 
     try {
-        const [expired] = await db.query(`
+        const [expired] = await db.promise().query(`
             SELECT 
                 bp.id,
                 bp.bookingID
@@ -25,7 +23,7 @@ export const expireOverduePayments = async () => {
         const now = getCurrentTimestamp();
 
         for (const payment of expired) {
-            const conn = await db.getConnection();
+            const conn = await getPromiseConnection();
             try {
                 await conn.beginTransaction();
 

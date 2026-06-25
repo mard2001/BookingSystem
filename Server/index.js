@@ -43,7 +43,6 @@ app.listen(process.env.SERVER_PORT, () => {
 cron.schedule('*/2 * * * *', async () => {
     try {
         await expireOverduePayments();
-        console.log('cron working');
     } catch (err) {
         console.error('[CRON] Unexpected error:', err);
     }
