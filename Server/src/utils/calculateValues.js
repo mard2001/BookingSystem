@@ -1,3 +1,5 @@
+const EXPIRY_MINUTES = 15;
+
 export const calculateAgeFromBirthDate = (birthDate) => {
     const birthDay = new Date(birthDate);
     const todaysDate = new Date();
@@ -16,6 +18,15 @@ export const calculateAgeFromBirthDate = (birthDate) => {
 
 export const getCurrentTimestamp = () => {
     return new Date().toLocaleString('en-CA', {
+        timeZone: 'Asia/Manila',
+        hour12: false
+    }).replace(',', '');
+};
+
+export const getExpiryTimestamp = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 15);
+    return now.toLocaleString('en-CA', {
         timeZone: 'Asia/Manila',
         hour12: false
     }).replace(',', '');

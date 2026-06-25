@@ -2,7 +2,7 @@ import React from 'react'
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getStoredUser } from '../../utils/LocalVariables';
-import { BarChart, CalendarDaysIcon, ChevronDown, ChevronLeft, ChevronRight, LayoutDashboard, LogOutIcon, MapPin, MenuIcon, Settings, SettingsIcon, UserCircle2, Users, X } from 'lucide-react';
+import { BarChart, CalendarDaysIcon, ChevronDown, ChevronLeft, ChevronRight, HomeIcon, LayoutDashboard, LogOutIcon, MapPin, MenuIcon, Settings, SettingsIcon, UserCircle2, Users, X } from 'lucide-react';
 import { getDecryptedRole } from '../../utils/Crypto';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,6 +32,7 @@ export const Sidebar = () => {
   }, [collapsed])
 
   const navItems = [
+    { label: "Home", icon: HomeIcon, path: "/", roles: ["superadmin", "admin", "customer"] },
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["superadmin", "admin", "staff"] },
     // { label: "Bookings", icon: CalendarDaysIcon, path: "/bookings", roles: ["admin", "staff"] },
     {

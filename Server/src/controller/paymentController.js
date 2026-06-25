@@ -1,7 +1,7 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { db, getConnection } from '../connect.js';
-import { getCurrentTimestamp } from '../utils/calculateValues.js';
+import { getCurrentTimestamp, getExpiryTimestamp } from '../utils/calculateValues.js';
 import * as response from '../utils/response.js';
 import { validateFields } from '../utils/validateFields.js';
 import 'dotenv/config';
@@ -100,9 +100,9 @@ export const initiatePayment = async (req, res) => {
                     // Insert new payment record
                     db.query(
                         `INSERT INTO tbl_booking_payment 
-                         (payment_intent_id, bookingID, payment_status, status, paidAt, createdAt, updatedAt)
-                         VALUES (?, ?, 'pending_payment', 'initiated', NULL, ?, ?)`,
-                        [intentId, bookingID, now, now],
+                         (payment_intent_id, bookingID, payment_status, status, paidAt, expiresAt, createdAt, updatedAt)
+                         VALUES (?, ?, 'pending_payment', 'initiated', NULL, ?, ?, ?)`,
+                        [intentId, bookingID, getExpiryTimestamp(), now, now],
                         (err) => {
                             if (err) return response.serverError(res, 'Database error', err);
                             return response.ok(res, 'Payment initiated successfully.', { intentId, qrImageUrl });
