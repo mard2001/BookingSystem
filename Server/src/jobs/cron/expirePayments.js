@@ -1,4 +1,4 @@
-import db from '../config/db.js';
+import { db } from '../connect.js';
 import { getCurrentTimestamp } from '../utils/helpers.js';
 
 let isRunning = false;
