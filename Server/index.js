@@ -7,6 +7,7 @@ import authRouter from './src/routes/authRouter.js';
 import bookingRouter from './src/routes/bookingRouter.js';
 import paymentRouter from './src/routes/paymentRouter.js';
 import dashboardRouter from './src/routes/dashboardRouter.js';
+import { expireOverduePayments } from './src/jobs/cron/expirePayments.js';
 
 const app = express();
 app.use(cors({
@@ -37,4 +38,10 @@ app.listen(process.env.SERVER_PORT, () => {
 })
 
 
-
+cron.schedule('*/2 * * * *', async () => {
+  try {
+    await expireOverduePayments();
+  } catch (err) {
+    console.error('[CRON] Unexpected error:', err);
+  }
+});
