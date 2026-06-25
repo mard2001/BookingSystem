@@ -4,6 +4,8 @@ import { getCurrentTimestamp } from '../../utils/calculateValues.js';
 let isRunning = false;
 
 export const expireOverduePayments = async () => {
+    console.log('expireOverduePayments working');
+
     if (isRunning) return;
     isRunning = true;
 
