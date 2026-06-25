@@ -1,4 +1,4 @@
-const EXPIRY_MINUTES = 15;
+const EXPIRY_MINUTES = 2;
 
 export const calculateAgeFromBirthDate = (birthDate) => {
     const birthDay = new Date(birthDate);
