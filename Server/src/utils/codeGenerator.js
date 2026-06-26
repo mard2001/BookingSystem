@@ -1,4 +1,5 @@
 import { db } from '../connect.js';
+import { getCurrentTimestamp } from './calculateValues.js';
 
 export const generateUserID = () => {
     const timestamp = Date.now().toString(36).toUpperCase();
@@ -20,3 +21,20 @@ export const generateBookingID = (bookingDate, callback) => {
         }
     );
 };
+
+export const generateRegularBookingID = () => {
+    const dateStr = getCurrentTimestamp().split(' ')[0];
+
+    return new Promise((resolve, reject) => {
+        db.query(
+            `SELECT COUNT(*) as count FROM tbl_recurring_schedules`,
+            [],
+            (err, results) => {
+                if (err) return reject(err);
+                const sequence = String(results[0].count + 1).padStart(4, '0');
+                resolve(`REGBK-${dateStr}-${sequence}`);
+            }
+        );
+    });
+};
+

@@ -1,6 +1,6 @@
-import { db, getConnection } from '../connect.js';
-import { getCurrentTimestamp } from '../utils/calculateValues.js';
-import { generateBookingID } from '../utils/codeGenerator.js';
+import { db, getConnection, getPromiseConnection } from '../connect.js';
+import { generateSlots, getCurrentTimestamp, getUpcomingDates } from '../utils/calculateValues.js';
+import { generateBookingID, generateRegularBookingID } from '../utils/codeGenerator.js';
 import * as response from '../utils/response.js';
 import 'dotenv/config';
 import { getDayType, getRateKey, getTimeType } from '../utils/valueFormats.js';
@@ -226,9 +226,9 @@ export const getCalendarBookings = (req, res) => {
 }
 
 export const getUpcomingBookings = (req, res) => {
-    if (!req.params.userID) return response.badRequest(res, "User ID is required.");
+    if (!req.params.accountID) return response.badRequest(res, "User ID is required.");
 
-    const { userID } = req.params;
+    const { accountID } = req.params;
 
     const q = `
             SELECT 
@@ -270,7 +270,7 @@ export const getUpcomingBookings = (req, res) => {
                 b.createdAt
             ORDER BY b.bookingDate ASC, MIN(bs.slotTime) ASC;`;
     
-    db.query(q, [userID], (err,data) => {
+    db.query(q, [accountID], (err,data) => {
         if (err) return response.serverError(res, "Database error", err);
 
         return (data.length > 0)
@@ -280,9 +280,9 @@ export const getUpcomingBookings = (req, res) => {
 }
 
 export const getHistoricalBookings = (req, res) => {
-    if (!req.params.userID) return response.badRequest(res, "User ID is required.");
+    if (!req.params.accountID) return response.badRequest(res, "User ID is required.");
 
-    const { userID } = req.params;
+    const { accountID } = req.params;
 
     const q = `
             SELECT 
@@ -326,7 +326,7 @@ export const getHistoricalBookings = (req, res) => {
                 b.createdAt
             ORDER BY b.bookingDate DESC, MIN(bs.slotTime) DESC`;
     
-    db.query(q, [userID], (err,data) => {
+    db.query(q, [accountID], (err,data) => {
         if (err) return response.serverError(res, "Database error", err);
 
         return (data.length > 0)
@@ -653,5 +653,176 @@ export const cancelBooking = async (req, res) => {
             conn.rollback(() => conn.release());
         }
         return response.serverError(res, 'Cancellation error', err);
+    }
+};
+
+export const generateBookingsForSchedule = async (scheduleID) => {
+    const conn = await getPromiseConnection();
+    try {
+        const [rows] = await conn.query(`
+            SELECT * FROM tbl_recurring_schedules WHERE scheduleID = ?
+        `, [scheduleID]);
+
+        if (rows.length === 0) throw new Error('Schedule not found.');
+        const schedule = rows[0];
+
+        const targetDates = getUpcomingDates(schedule, 4);
+
+        let generated = 0;
+        let skipped = 0;
+        const skippedDates = [];
+        // Fetch user details once — not inside the date loop
+        const [userRows] = await conn.query(`
+            SELECT a.id, ud.firstName, ud.lastName, a.email, ud.contactNumber
+            FROM tbl_accounts a
+            JOIN tbl_user_details ud ON a.id = ud.accountID
+            WHERE a.id = ?
+        `, [schedule.accountID]);
+
+        if (userRows.length === 0) throw new Error('Account not found.');
+        const user = userRows[0];
+        const bookerFullName = `${user.firstName} ${user.lastName}`;
+
+        for (const date of targetDates) {
+            // 1. Check blackout dates
+            const [blackout] = await conn.query(`
+                SELECT id FROM tbl_blackout_dates
+                WHERE isActive = 1
+                    AND ? BETWEEN blackoutDateStart AND blackoutDateEnd
+                    AND (scope = 'venue' OR (scope = 'court' AND courtID = ?))
+            `, [date, schedule.courtID]);
+
+            if (blackout.length > 0) {
+                skipped++;
+                skippedDates.push({ date, reason: 'blackout' });
+                continue;
+            }
+
+            const slots = generateSlots(schedule.startTime, schedule.endTime);
+            // 2. Check if already generated
+            const [existing] = await conn.query(`
+                SELECT bs.slotTime
+                FROM tbl_booking_slots bs
+                JOIN tbl_bookings b ON b.bookingID = bs.bookingID
+                WHERE b.scheduleID = ?
+                AND b.bookingDate = ?
+                AND bs.slotTime IN (?)
+            `, [scheduleID, date, slots]);
+
+            if (existing.length > 0) {
+                skipped++;
+                skippedDates.push({ date, reason: 'already_generated' });
+                continue;
+            }
+
+            // 3. Check slot conflicts
+            const [conflict] = await conn.query(`
+                SELECT bs.slotTime
+                FROM tbl_booking_slots bs
+                JOIN tbl_bookings b ON b.bookingID = bs.bookingID
+                WHERE b.courtID = ?
+                  AND b.bookingDate = ?
+                  AND b.status NOT IN ('cancelled', 'rejected')
+                  AND bs.slotTime IN (?)
+            `, [schedule.courtID, date, slots]);
+
+            if (conflict.length > 0) {
+                skipped++;
+                skippedDates.push({
+                    date,
+                    reason: 'conflict',
+                    conflictingSlots: conflict.map(c => c.slotTime)
+                });
+                continue;
+            }
+
+            // 4. Generate booking — wrapped in transaction
+            const now = getCurrentTimestamp();
+            const bookingID = `${schedule.scheduleID}_${date.replace(/-/g, '')}`;
+
+            try {
+                await conn.beginTransaction();
+
+                await conn.query(`
+                    INSERT INTO tbl_bookings
+                        (bookingID, scheduleID, courtID, accountID, bookingDate,
+                         bookerFullName, bookerEmail, bookerContactNumber,
+                         totalAmount, paymentMethod, status, createdAt, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'court', 'confirmed', ?, ?)
+                `, [
+                    bookingID, schedule.id, schedule.courtID, user.id, date, 
+                    bookerFullName, user.email, user.contactNumber,
+                    schedule.totalAmount, now, now
+                ]);
+
+                await conn.query(`
+                    INSERT INTO tbl_booking_slots (bookingID, slotTime, status, createdAt, updatedAt)
+                    VALUES ?
+                `, [slots.map(slot => [bookingID, slot, 'confirmed', now, now])]);
+
+                await conn.commit();
+                generated++;
+
+            } catch (err) {
+                await conn.rollback();
+                skipped++;
+                skippedDates.push({ date, reason: 'insert_failed', error: err.message });
+            }
+        }
+
+        return { generated, skipped, skippedDates };
+
+    } finally {
+        conn.release();
+    }
+};
+
+export const createRecurringSched = async (req, res) => {
+    // return response.ok(res,'Recurring schedule created successfully.')
+    
+    if (!validateFields(req, res, [
+        'accountID', 'courtID', 'frequency', 'startTime', 'endTime', 'startDate', 'totalAmount'
+    ])) return;
+
+    const { accountID, courtID, frequency, dayOfWeek, dayOfMonth, startTime, endTime, startDate, endDate, totalAmount } = req.body;
+
+    if (frequency === 'weekly' && dayOfWeek == null)
+        return response.badRequest(res, 'Day of the week is required for weekly regular schedules.');
+    if (frequency === 'monthly' && dayOfMonth == null)
+        return response.badRequest(res, 'Day of the month is required for monthly regular schedules.');
+
+    const sanitizedEndDate = (endDate && endDate !== '' && endDate !== '0000-00-00') ? endDate : null;
+    const bookingSchedID = await generateRegularBookingID();
+    const now = getCurrentTimestamp();
+    const sqlCreate = `
+        INSERT INTO tbl_recurring_schedules
+            (scheduleID, accountID, courtID, frequency, dayOfWeek, dayOfMonth,
+            startTime, endTime, startDate, endDate,
+            totalAmount, paymentStatus, status, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'active', ?, ?)`;
+
+    try {
+        const scheduleID = await new Promise((resolve, reject) => {
+            db.query(sqlCreate, [
+                bookingSchedID, accountID, courtID, frequency, dayOfWeek ?? null, dayOfMonth ?? null,
+                startTime, endTime, startDate, sanitizedEndDate,
+                totalAmount, now, now
+            ], (err, result) => {
+                if (err) return reject(err);
+                if (result.affectedRows === 0) return reject(new Error('Creation failed.'));
+                resolve(result.insertId);
+            });
+        });
+
+        const report = await generateBookingsForSchedule(bookingSchedID);
+
+        return response.ok(res, 'Recurring schedule created successfully.', {
+            scheduleID,
+            ...report
+        });
+
+    } catch (err) {
+        console.error('[createRecurringSched]', err);
+        return response.serverError(res, 'Failed to create recurring schedule.', err);
     }
 };
