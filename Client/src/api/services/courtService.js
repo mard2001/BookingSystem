@@ -4,7 +4,7 @@ import api from "../axiosInstance.js";
 export async function getCourts() {
     try {
         const response = await api.get("/api/v1/courts/getall");
-        return response.data;
+        return response;
     } catch (error) {
         console.error("Get courts failed:", error);
 
@@ -26,11 +26,9 @@ export async function getAvailableCourts() {
 export async function getCountTotalCourts() {
     try {
         const response = await api.get("/api/v1/courts/getcount/all");
-        console.log
         return response.data[0].totalCount;
     } catch (error) {
         console.error("Get courts failed:", error);
-
         throw error;
     }
 }
@@ -38,7 +36,6 @@ export async function getCountTotalCourts() {
 export async function getCountAvailableCourts() {
     try {
         const response = await api.get("/api/v1/courts/getcount/available");
-        console.log
         return response.data[0].totalCount;
     } catch (error) {
         console.error("Get courts failed:", error);
@@ -50,7 +47,6 @@ export async function getCountAvailableCourts() {
 export async function getCountUnavailableCourts() {
     try {
         const response = await api.get("/api/v1/courts/getcount/unavailable");
-        console.log
         return response.data[0].totalCount;
     } catch (error) {
         console.error("Get courts failed:", error);
@@ -62,11 +58,9 @@ export async function getCountUnavailableCourts() {
 export async function getCountMaintenanceCourts() {
     try {
         const response = await api.get("/api/v1/courts/getcount/undermaintenance");
-        console.log
         return response.data[0].totalCount;
     } catch (error) {
         console.error("Get courts failed:", error);
-
         throw error;
     }
 }

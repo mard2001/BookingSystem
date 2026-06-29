@@ -46,7 +46,7 @@ export const CustomersPage = () => {
       try {
         setCustomerLoading(true);
         const customers = await getAllActiveCustomers();
-        setCustomerData(customers);
+        setCustomerData(customers.data);
       } catch (err) {
         setCustomerError("Failed to load active customers.");
       } finally {
@@ -58,7 +58,7 @@ export const CustomersPage = () => {
       try {
         setAdminLoading(true);
         const admins = await getAllActiveAdmin();
-        setAdminData(admins);
+        setAdminData(admins.data);
       } catch (err) {
         setAdminError("Failed to load active admins.");
       } finally {

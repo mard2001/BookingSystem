@@ -32,7 +32,7 @@ export const CourtsPage = () => {
       try {
         setLoading(true);
         const courts = await getCourts();
-        setData(courts);
+        setData(courts.data);
       } catch (err) {
         toast.error("Failed to load courts.");
         setError("Failed to load courts.");
@@ -59,8 +59,8 @@ export const CourtsPage = () => {
   const handleEditSubmit = async () => {
     const errors = validateForm(editForm, addCourtRules);
     if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors); 
-        return;
+      setFieldErrors(errors); 
+      return;
     }
     
     try {

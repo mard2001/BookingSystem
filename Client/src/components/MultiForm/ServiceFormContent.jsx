@@ -20,7 +20,7 @@ export const ServiceFormContent = () => {
         const data = await apiHandler(() => getCourts());
 
         if (data) {
-        setAvailableCourts(data);
+        setAvailableCourts(data.data);
         }
     };
     return (

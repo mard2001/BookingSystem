@@ -65,6 +65,22 @@ export const getAvailableSlots = (req, res) => {
     });
 };
 
+export const getCourtSlots = (req, res) => {
+    const { courtID } = req.params;
+
+    if (!courtID) return response.badRequest(res, 'Date is required');
+    
+    const query = `
+        SELECT id, courtID, slotTime FROM tbl_time_slots WHERE courtID = ? AND isActive = 1;
+    `;
+
+    db.query(query, [courtID], (err, results) => {
+        if (err) return response.serverError(res, 'Database error', err);
+
+        return response.ok(res, 'Slots fetched successfully', results);
+    });
+};
+
 export const checkAvailability = (req, res) => {
     const { courtID, bookingDate, slotTimes } = req.body;
 
@@ -777,7 +793,7 @@ export const generateBookingsForSchedule = async (scheduleID) => {
     }
 };
 
-export const createRecurringSched = async (req, res) => {
+export const createRecurringSched2 = async (req, res) => {
     // return response.ok(res,'Recurring schedule created successfully.')
     
     if (!validateFields(req, res, [
@@ -826,3 +842,85 @@ export const createRecurringSched = async (req, res) => {
         return response.serverError(res, 'Failed to create recurring schedule.', err);
     }
 };
+
+export const createRecurringSched = async (req, res) => {
+    if (!validateFields(req, res, [
+        'accountID', 'courtID', 'frequency', 'startTime', 'endTime', 'startDate', 'totalAmount'
+    ])) return;
+
+    const { accountID, courtID, frequency, dayOfWeek, dayOfMonth, startTime, endTime, startDate, endDate, totalAmount, remarks } = req.body;
+
+    // normalize dayOfWeek to array
+    const daysArray = Array.isArray(dayOfWeek) ? dayOfWeek : dayOfWeek != null ? [dayOfWeek] : [];
+
+    if (frequency === 'weekly' && daysArray.length === 0)
+        return response.badRequest(res, 'At least one day of the week is required for weekly schedules.');
+    if (frequency === 'monthly' && (dayOfMonth == null || dayOfMonth === ''))
+        return response.badRequest(res, 'Day of the month is required for monthly schedules.');
+
+    const sanitizedEndDate = (endDate && endDate !== '' && endDate !== '0000-00-00') ? endDate : null;
+    const now = getCurrentTimestamp();
+
+    const sqlCreate = `
+        INSERT INTO tbl_recurring_schedules
+            (scheduleID, accountID, courtID, frequency, dayOfWeek, dayOfMonth,
+            startTime, endTime, startDate, endDate,
+            totalAmount, paymentStatus, status, remarks, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'active', ?, ?, ?)`;
+
+    try {
+        const createdSchedules = [];
+
+        // insert one row per day
+        const dayList = frequency === 'weekly' ? daysArray : [null];
+
+        for (const day of dayList) {
+            const bookingSchedID = await generateRegularBookingID();
+
+            const scheduleID = await new Promise((resolve, reject) => {
+                db.query(sqlCreate, [
+                    bookingSchedID, accountID, courtID, frequency,
+                    day ?? null,
+                    frequency === 'monthly' ? dayOfMonth : null,
+                    startTime, endTime, startDate, sanitizedEndDate,
+                    totalAmount, remarks ?? null, now, now
+                ], (err, result) => {
+                    if (err) return reject(err);
+                    if (result.affectedRows === 0) return reject(new Error('Creation failed.'));
+                    resolve(bookingSchedID);
+                });
+            });
+
+            const report = await generateBookingsForSchedule(scheduleID);
+            createdSchedules.push({ scheduleID, ...report });
+        }
+
+        return response.ok(res, 'Recurring schedule created successfully.', createdSchedules);
+
+    } catch (err) {
+        console.error('[createRecurringSched]', err);
+        return response.serverError(res, 'Failed to create recurring schedule.', err);
+    }
+};
+
+export const getRegularUser = (req, res) => {
+    const query = `
+            SELECT a.scheduleID, a.frequency, a.dayOfWeek, a.dayOfMonth, a.startTime, a.endTime, a.totalAmount, a.paymentStatus, a.status, 
+                    a.accountID, b.email, c.firstName, c.lastName,
+                    a.courtID, d.courtSport, d.courtLabel, d.courtType, a.createdAt
+            FROM tbl_recurring_schedules a
+            JOIN tbl_accounts b ON a.accountID = b.id
+            JOIN tbl_user_details c ON b.id = c.accountID
+            JOIN tbl_courts d ON d.courtID = a.courtID
+            -- WHERE b.userType = 'customer'
+            ORDER BY a.scheduleID DESC`;
+
+    db.query(query, (err, data) => {
+        if (err) {
+            return response.serverError(res, "Database error", err);
+        }
+        return (data.length > 0)
+            ? response.ok(res, 'All regular bookings successfully retrieved.', data)
+            : response.ok(res, 'No regular booking found',[]);
+    })
+}

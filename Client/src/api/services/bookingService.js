@@ -9,6 +9,15 @@ export async function getAllBookings() {
     }
 };
 
+export const fetchOfferedSlots = async (courtID, date) => {
+    try {
+        const response = await api.get(`/api/v1/bookings/get/slots/${courtID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const fetchAvailableSlots = async (courtID, date) => {
     const formattedDate = date.toLocaleDateString('en-CA', {timeZone: 'Asia/Manila'});
     
@@ -129,6 +138,27 @@ export const updateBookingDetails = async(bookingDetails, bookingID) => {
 export const cancelBookingInitiation = async(bookingID, paymentIntentID) => {
     try {
         const response = await api.put(`/api/v1/bookings/cancel/${bookingID}/${paymentIntentID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const getRegularBookings = async () => {
+    try {
+        const response = await api.get("/api/v1/bookings/getall/recurring-schedule");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const createRegularBooking = async (bookingDetail) => {
+    console.log(bookingDetail)
+    try {
+        const response = await api.post("/api/v1/bookings/regularbooking",{
+            ...bookingDetail
+        });
         return response;
     } catch (error) {
         throw error;

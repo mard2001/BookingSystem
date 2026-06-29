@@ -27,7 +27,7 @@ export async function getAllActiveUsers() {
 export async function getAllCustomers() {
     try {
         const response = await api.get("/api/v1/users/getall/customers");
-        return response.data;
+        return response;
     } catch (error) {
         console.error("Get customers failed:", error);
 
@@ -38,7 +38,7 @@ export async function getAllCustomers() {
 export async function getAllActiveCustomers() {
     try {
         const response = await api.get("/api/v1/users/getall/customers/active");
-        return response.data;
+        return response;
     } catch (error) {
         console.error("Get active customers failed:", error);
 
@@ -49,7 +49,7 @@ export async function getAllActiveCustomers() {
 export async function getAllAdmin() {
     try {
         const response = await api.get("/api/v1/users/getall/admins");
-        return response.data;
+        return response;
     } catch (error) {
         throw error;
     }
@@ -58,7 +58,7 @@ export async function getAllAdmin() {
 export async function getAllActiveAdmin() {
     try {
         const response = await api.get("/api/v1/users/getall/admins/active");
-        return response.data;
+        return response;
     } catch (error) {
         throw error;
     }
