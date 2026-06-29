@@ -793,56 +793,6 @@ export const generateBookingsForSchedule = async (scheduleID) => {
     }
 };
 
-export const createRecurringSched2 = async (req, res) => {
-    // return response.ok(res,'Recurring schedule created successfully.')
-    
-    if (!validateFields(req, res, [
-        'accountID', 'courtID', 'frequency', 'startTime', 'endTime', 'startDate', 'totalAmount'
-    ])) return;
-
-    const { accountID, courtID, frequency, dayOfWeek, dayOfMonth, startTime, endTime, startDate, endDate, totalAmount } = req.body;
-
-    if (frequency === 'weekly' && dayOfWeek == null)
-        return response.badRequest(res, 'Day of the week is required for weekly regular schedules.');
-    if (frequency === 'monthly' && dayOfMonth == null)
-        return response.badRequest(res, 'Day of the month is required for monthly regular schedules.');
-
-    const sanitizedEndDate = (endDate && endDate !== '' && endDate !== '0000-00-00') ? endDate : null;
-    const bookingSchedID = await generateRegularBookingID();
-    const now = getCurrentTimestamp();
-    const sqlCreate = `
-        INSERT INTO tbl_recurring_schedules
-            (scheduleID, accountID, courtID, frequency, dayOfWeek, dayOfMonth,
-            startTime, endTime, startDate, endDate,
-            totalAmount, paymentStatus, status, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'active', ?, ?)`;
-
-    try {
-        const scheduleID = await new Promise((resolve, reject) => {
-            db.query(sqlCreate, [
-                bookingSchedID, accountID, courtID, frequency, dayOfWeek ?? null, dayOfMonth ?? null,
-                startTime, endTime, startDate, sanitizedEndDate,
-                totalAmount, now, now
-            ], (err, result) => {
-                if (err) return reject(err);
-                if (result.affectedRows === 0) return reject(new Error('Creation failed.'));
-                resolve(result.insertId);
-            });
-        });
-
-        const report = await generateBookingsForSchedule(bookingSchedID);
-
-        return response.ok(res, 'Recurring schedule created successfully.', {
-            scheduleID,
-            ...report
-        });
-
-    } catch (err) {
-        console.error('[createRecurringSched]', err);
-        return response.serverError(res, 'Failed to create recurring schedule.', err);
-    }
-};
-
 export const createRecurringSched = async (req, res) => {
     if (!validateFields(req, res, [
         'accountID', 'courtID', 'frequency', 'startTime', 'endTime', 'startDate', 'totalAmount'
@@ -924,3 +874,83 @@ export const getRegularUser = (req, res) => {
             : response.ok(res, 'No regular booking found',[]);
     })
 }
+
+export const getRecurringBookingData = (req, res) => {
+    const { scheduleID } = req.params;
+
+    const query = `
+        SELECT 
+            rs.scheduleID, rs.frequency, rs.dayOfWeek, rs.dayOfMonth,
+            rs.startTime, rs.endTime, rs.startDate, rs.endDate,
+            rs.totalAmount AS scheduleTotalAmount, rs.paymentStatus, 
+            rs.status AS scheduleStatus, rs.remarks,
+            
+            b.bookingID, b.bookingDate, b.bookerFullName, b.bookerEmail, 
+            b.bookerContactNumber, b.totalAmount AS bookingTotalAmount,
+            b.paymentMethod, b.status AS bookingStatus,
+            
+            bs.slotTime, bs.rateApplied, bs.status AS slotStatus
+
+        FROM tbl_recurring_schedules rs
+        JOIN tbl_bookings b ON rs.scheduleID = b.scheduleID
+        JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
+        WHERE rs.scheduleID = ?
+        ORDER BY rs.scheduleID, b.bookingDate, bs.slotTime`;
+
+    db.query(query, [scheduleID], (err, rows) => {
+        if (err) return response.serverError(res, "Database error", err);
+        if (rows.length === 0) return response.ok(res, "No data found", null);
+
+        const scheduleMap = {};
+
+        rows.forEach(row => {
+            if (!scheduleMap[row.scheduleID]) {
+                scheduleMap[row.scheduleID] = {
+                    scheduleID: row.scheduleID,
+                    frequency: row.frequency,
+                    dayOfWeek: row.dayOfWeek,
+                    dayOfMonth: row.dayOfMonth,
+                    startTime: row.startTime,
+                    endTime: row.endTime,
+                    startDate: row.startDate,
+                    endDate: row.endDate,
+                    totalAmount: row.scheduleTotalAmount,
+                    paymentStatus: row.paymentStatus,
+                    status: row.scheduleStatus,
+                    remarks: row.remarks,
+                    bookings: {}
+                };
+            }
+
+            const schedule = scheduleMap[row.scheduleID];
+
+            if (!schedule.bookings[row.bookingID]) {
+                schedule.bookings[row.bookingID] = {
+                    bookingID: row.bookingID,
+                    bookingDate: row.bookingDate,
+                    bookerFullName: row.bookerFullName,
+                    bookerEmail: row.bookerEmail,
+                    bookerContactNumber: row.bookerContactNumber,
+                    totalAmount: row.bookingTotalAmount,
+                    paymentMethod: row.paymentMethod,
+                    status: row.bookingStatus,
+                    slots: []
+                };
+            }
+
+            schedule.bookings[row.bookingID].slots.push({
+                slotTime: row.slotTime,
+                rateApplied: row.rateApplied,
+                status: row.slotStatus
+            });
+        });
+
+        // convert nested objects to arrays
+        const result = Object.values(scheduleMap).map(schedule => ({
+            ...schedule,
+            bookings: Object.values(schedule.bookings)
+        }));
+
+        return response.ok(res, "Recurring schedule with bookings retrieved.", result);
+    });
+};

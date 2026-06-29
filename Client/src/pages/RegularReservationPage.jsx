@@ -30,7 +30,7 @@ export const RegularReservationPage = () => {
     const [error, setError] = useState(null);
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [newBooking, setNewBooking] = useState({
-        "accountID":"", "courtID":"", "frequency":"weekly", "dayOfWeek": [], "dayOfMonth":"", "selectedTimes":[], "startTime":"", "endTime":"", "startDate":"", "endDate":"", "totalAmount": 0, "remarks":""
+        "accountID":"", "courtID":"", "frequency":"weekly", "dayOfWeek": [], "dayOfMonth":"0", "selectedTimes":[], "startTime":"", "endTime":"", "startDate":"", "endDate":"", "totalAmount": 0, "remarks":""
     })
     const [customerData, setCustomerData] = useState([]);
     const [courtData, setCourtData] = useState([]);
@@ -275,7 +275,7 @@ export const RegularReservationPage = () => {
             setAddModalOpen(false);
             setFieldErrors({});
             setNewBooking({
-                "accountID":"", "courtID":"", "frequency":"weekly", "dayOfWeek": [], "dayOfMonth":"", "selectedTimes":[], "startTime":"", "endTime":"", "startDate":"", "endDate":"", "totalAmount": 0, "remarks":""
+                "accountID":"", "courtID":"", "frequency":"weekly", "dayOfWeek": [], "dayOfMonth":"0", "selectedTimes":[], "startTime":"", "endTime":"", "startDate":"", "endDate":"", "totalAmount": 0, "remarks":""
             });
         } catch (err) {
             toast.error(err.message);
