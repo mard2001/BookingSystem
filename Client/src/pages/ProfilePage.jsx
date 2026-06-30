@@ -153,10 +153,10 @@ export const ProfilePage = () => {
     return (
         <>
             <div className='profileHeader mb-5'>
-                <div className='flex justify-between items-center bg-card p-10 rounded-2xl shadow-xl'>
-                    <div className='flex space-x-5 items-center'>
-                        <div className='p-5 bg-secondary/50 text-white/60 rounded-full'>
-                            <User className='w-13 h-13' />
+                <div className='flex max-md:flex-col justify-between items-center bg-card p-10 rounded-2xl shadow-xl'>
+                    <div className='flex space-x-2 sm:space-x-5 items-center'>
+                        <div className='p-3 sm:p-5 bg-secondary/50 text-white/60 rounded-full'>
+                            <User className='w-5 h-5 sm:w-13 sm:h-13' />
                         </div>
                         <div>
                             <p className='text-xl font-semibold text-primary'>{`${userFullDetails?.firstName ?? ''} ${userFullDetails?.middleName ? userFullDetails.middleName.charAt(0) + '.' : ''} ${userFullDetails?.lastName ?? ''} ${userFullDetails?.suffix ?? ''}`} </p>
@@ -174,7 +174,7 @@ export const ProfilePage = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex max-md:mt-5 max-md:space-x-2 md:flex-col">
                         <button onClick={() => {setIsPasswordVisible(false); setEditModalOpen(true)}}
                             className="flex items-center justify-center px-6 py-2 text-xs bg-primary border-1 border-primary text-white rounded-lg hover:bg-primary-darker hover:text-white hover:cursor-pointer mb-1">
                             <Pen className="w-5 h-5 mr-2" /> Edit Account
@@ -186,8 +186,8 @@ export const ProfilePage = () => {
                     </div>
                 </div>
             </div>
-            <div className='flex space-x-5'>
-                <div className='bg-card p-5 rounded-2xl shadow-xl w-[300px]'>
+            <div className='flex max-md:flex-col max-md:space-y-5 md:space-x-5'>
+                <div className='bg-card p-5 rounded-2xl shadow-xl md:w-[300px]'>
                     <div className='mb-5 flex items-center justify-between'>
                         <p className='text-primary font-semibold '>Account Info</p>
                         <FileUser className='w-5 h-5 text-secondary' />
@@ -231,7 +231,7 @@ export const ProfilePage = () => {
                             <p className='text-primary font-semibold '>Upcoming Bookings</p>
                             <LucideCalendarDays className='w-5 h-5 text-secondary' />
                         </div>
-                        <div className='overflow-y-auto max-h-[175px]'>
+                        <div className='overflow-y-auto max-h-[300px] md:max-h-[175px]'>
                             {bookingUpcomingData.length > 0 ? 
                                 bookingUpcomingData.map((upcomingBooking) => {
                                     const bookingDate= new Date(upcomingBooking.bookingDate);
@@ -255,19 +255,16 @@ export const ProfilePage = () => {
 
                                     return(
                                         <div key={`upcomingBooking_${upcomingBooking.bookingID}`} className='border-1 border-primary/20 bg-primary/10 rounded-lg flex space-x-4 px-4 py-3 mb-2'>
-                                            <div className='border-1 border-primary/50 bg-primary/15 text-center px-4 py-1 rounded-lg'>
+                                            <div className='border-1 border-primary/50 bg-primary/15 text-center px-4 py-1 rounded-lg max-h-[60px]'>
                                                 <span className='uppercase text-[10px] text-primary/50 mt-5'>{shortMonth}</span>
                                                 <p className='text-xl text-primary -mt-2'>{day}</p>
                                             </div>
-                                            <div className='flex-1 flex justify-between items-center'>
+                                            <div className='flex-1 flex flex-col min-md:flex-row min-md:justify-between min-md:items-center'>
                                                 <div className=''>
                                                     <p className='text-sm text-primary font-semibold'>{upcomingBooking.courtLabel} - {upcomingBooking.courtSport}</p>
                                                     <p className='text-xs text-secondary'>{upcomingBooking.bookingID} | {startTime} - {endTime}</p>
                                                 </div>
                                                 <div>
-                                                    {/* <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-400">
-                                                        {statusMap[upcomingBooking.bookingStatus]}
-                                                    </span> */}
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${style} `}>
                                                         {label}
                                                     </span>

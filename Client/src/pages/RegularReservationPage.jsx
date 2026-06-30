@@ -601,7 +601,7 @@ export const RegularReservationPage = () => {
         
                                             return(
                                                 <div key={`upcomingBooking_${upcomingBooking.bookingID}`} className='border-1 border-primary/20 bg-primary/10 rounded-lg flex space-x-4 px-4 py-3 mb-2'>
-                                                    <div className='border-1 border-primary/50 bg-primary/15 text-center px-4 py-1 rounded-lg'>
+                                                    <div className='border-1 border-primary/50 bg-primary/15 text-center px-4 py-1 rounded-lg max-h-[60px]'>
                                                         <span className='uppercase text-[10px] text-primary/50 mt-5'>{shortMonth}</span>
                                                         <p className='text-xl text-primary -mt-2'>{day}</p>
                                                     </div>
