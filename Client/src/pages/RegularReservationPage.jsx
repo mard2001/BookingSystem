@@ -1,16 +1,17 @@
-import { CalendarSync, PlusCircle, User2 } from 'lucide-react';
+import { CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, PlusCircle, SkipForwardIcon, User2, XCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo } from 'react'
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { getExportFilename } from '../utils/ExportTable';
-import { createRegularBooking, fetchOfferedSlots, getRegularBookings } from '../api/services/bookingService';
+import { createRegularBooking, fetchOfferedSlots, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
 import { Modal } from '../components/Modal';
 import { getCourts } from '../api/services/courtService';
 import { getAllActiveCustomers } from '../api/services/usersService';
 import { toast } from 'sonner';
-import { addOneHour, shortFormatReadableDateTime } from '../utils/ValueFormat';
+import { addOneHour, formatSlotTime, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { validateForm } from '../utils/ValueValidate';
 import { newRecurringBookingRules } from '../Rules/BookingInputRules';
+import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
 
 const DAYS = [
     { label: "M", value: 1 },
@@ -34,7 +35,10 @@ export const RegularReservationPage = () => {
     })
     const [customerData, setCustomerData] = useState([]);
     const [courtData, setCourtData] = useState([]);
-    const [timeSlots, setTimeSlots] = useState([])      
+    const [timeSlots, setTimeSlots] = useState([]);
+    const [selectedBookingData, setSelectedBookingData] = useState(null);      
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+
 
     const formatTime = (timeStr) => {
         if (!timeStr) return "N/A";
@@ -45,6 +49,20 @@ export const RegularReservationPage = () => {
         hour = hour % 12 || 12;
         return `${hour}:${min.toString().padStart(2, "0")} ${period}`;
     };
+
+    const displayFrequency = (frequency, dayOfWeek, startTime) => {
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const day = frequency === "weekly" && dayOfWeek != null
+            ? days[dayOfWeek]
+            : null;
+
+        const time = formatTime(startTime);
+
+        if (frequency === "weekly" && day) return `Every ${day} ${time}`;
+        if (frequency === "monthly") return `Every day of the month ${time}`; // see note below
+        if (frequency === "daily") return `Every day ${time}`;
+        return `${frequency} ${time}`;
+    }
 
     const columns = useMemo(() => [
         {
@@ -75,28 +93,18 @@ export const RegularReservationPage = () => {
         ),
         },
         { 
-        header: "Type", 
-        accessorKey: "courtType",
-        cell: ({ row }) => (
-            <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-            {row.original.courtType}
-            </span>
-        ),
+            header: "Type", 
+            accessorKey: "courtType",
+            cell: ({ row }) => (
+                <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                {row.original.courtType}
+                </span>
+            ),
         },
         {
             header: "Regular Schedule",
             accessorFn: (row) => {
-                const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                const day = row.frequency === "weekly" && row.dayOfWeek != null
-                    ? days[row.dayOfWeek]
-                    : null;
-
-                const time = formatTime(row.startTime);
-
-                if (row.frequency === "weekly" && day) return `Every ${day} ${time}`;
-                if (row.frequency === "monthly") return `Every ${row.dayOfMonth} of the month ${time}`;
-                if (row.frequency === "daily") return `Every day ${time}`;
-                return `${row.frequency} ${time}`;
+                return displayFrequency(row.frequency, row.dayOfWeek, row.startTime);
             },
             cell: ({ getValue }) => {
                 const text = getValue() ?? "";
@@ -134,29 +142,19 @@ export const RegularReservationPage = () => {
             accessorKey: "createdAt",
             cell: ({ row }) => (
                 <span>
-                {shortFormatReadableDateTime(row.original.createdAt)}
+                    {shortFormatReadableDateTime(row.original.createdAt)}
                 </span>
             ),
         },
         {
-        header: "Actions",
-        id: "actions",
-        cell: ({ row }) => (
-            <div className="flex gap-2">
-                {/* <button
-                    onClick={() => handleEdit(row.original)}
-                    className="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 hover:cursor-pointer"
-                >
-                    <EditIcon className="w-5 h-5" />
-                </button>
-                <button
-                    onClick={() => handleDelete(row.original)}
-                    className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 hover:cursor-pointer"
-                >
-                    <Trash2Icon className="w-5 h-5" />
-                </button> */}
-            </div>
-        ),
+            header: "Actions",
+            id: "actions",
+            cell: ({ row }) => (
+                <ActionDropdownBooking 
+                    row={row}
+                    onEdit={(data) => {handleViewModal(data)}}
+                />
+            ),
         },
     ], []);
 
@@ -283,6 +281,18 @@ export const RegularReservationPage = () => {
                 const errors = Object.fromEntries(err.errors.missing.map(f => [f, "This field is required."]));
                 setFieldErrors(errors);
             }
+        }
+    }
+
+    const handleViewModal = async (booking) => {
+        setSelectedBookingData(null);
+
+        try {
+            const bookingData = await getRegularSchedFutureBookings(booking.scheduleID);
+            setSelectedBookingData(bookingData.data);
+            if (bookingData.data) setViewModalOpen(true);
+        } catch (error) {
+            toast.error(error.message);
         }
     }
     
@@ -544,6 +554,128 @@ export const RegularReservationPage = () => {
                         </button>
                     </div>
                 </div>
+            </Modal>
+
+            <Modal open={viewModalOpen} onClose={() => setViewModalOpen(false)} size="xl">
+                {selectedBookingData && (
+                    <div>
+                        <h2 className="text-xl font-bold text-primary mb-1">Regular Schedule Details</h2>
+                        <p className="text-sm text-secondary mb-6 flex items-center">
+                            <CalendarSync className='w-4 h-4 mr-2' />
+                            {selectedBookingData.scheduleID}
+                            <span className='mx-2'>|</span>
+                            {displayFrequency(
+                                selectedBookingData.frequency,
+                                selectedBookingData.dayOfWeek,
+                                selectedBookingData.startTime,
+                                selectedBookingData.dayOfMonth 
+                            )}
+                            <span className='mx-2'>|</span>
+                            {selectedBookingData.courtLabel}
+                        </p>
+                        <hr className='max-md mb-5 text-secondary/30'/>
+                        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+                            <div className='order-2 md:order-1 md:col-span-3'>
+                                <h4 className='text-xs text-secondary mb-2.5'>Upcoming Bookings</h4>
+                                <div className='overflow-y-auto'>
+                                    {selectedBookingData.bookings.length > 0 ? 
+                                        selectedBookingData.bookings.map((upcomingBooking) => {
+                                            console.log("upcomingBooking",upcomingBooking)
+                                            const bookingDate= new Date(upcomingBooking.bookingDate);
+                                            const shortMonth = bookingDate.toLocaleDateString('en-US', {month: 'short'});
+                                            const day = bookingDate.getDate();
+                                            
+                                            const slots = upcomingBooking.slots;
+                                            const firstTime = slots[0]?.slotTime;
+                                            const lastTime = slots[slots.length - 1]?.slotTime;
+                                            const endTime = addOneHour(lastTime);
+        
+                                            const statusMap = {
+                                                "confirmed": { label: "Confirmed", style: "bg-green-100 text-green-700" },
+                                                "pending":   { label: "Pending",   style: "bg-yellow-100 text-yellow-700" },
+                                                "cancelled": { label: "Cancelled", style: "bg-red-100 text-red-700" },
+                                                "completed": { label: "Completed", style: "bg-blue-100 text-blue-700" },
+                                                "deleted": { label: "Deleted", style: "bg-gray-300 text-gray-700" },
+                                            };
+                                            const { label, style } = statusMap[upcomingBooking.status] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
+        
+                                            return(
+                                                <div key={`upcomingBooking_${upcomingBooking.bookingID}`} className='border-1 border-primary/20 bg-primary/10 rounded-lg flex space-x-4 px-4 py-3 mb-2'>
+                                                    <div className='border-1 border-primary/50 bg-primary/15 text-center px-4 py-1 rounded-lg'>
+                                                        <span className='uppercase text-[10px] text-primary/50 mt-5'>{shortMonth}</span>
+                                                        <p className='text-xl text-primary -mt-2'>{day}</p>
+                                                    </div>
+                                                    <div className='flex-1 flex flex-col min-md:flex-row min-md:justify-between min-md:items-center'>
+                                                        <div className=''>
+                                                            <p className='text-sm text-primary font-semibold'>{upcomingBooking.courtLabel} - {upcomingBooking.courtSport}</p>
+                                                            <p className='text-xs text-secondary'>{upcomingBooking.bookingID} | {firstTime} - {endTime}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${style} `}>
+                                                                {label}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })
+                                    :(
+                                        <div className="text-center text-secondary text-sm">
+                                            <span>No Upcoming Bookings. Book Now!</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className='order-1 md:order-2'>
+                                <div className='mb-5'>
+                                    <h4 className='text-xs text-secondary'>Schedule Summary</h4>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <CalendarDays className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.bookings.length}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Total Sessions</span>
+                                        </div>
+                                    </div>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <CalendarCheckIcon className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.startDate && shortFormatReadableDate(selectedBookingData.startDate)}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Started Date</span>
+                                        </div>
+                                    </div>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <CalendarX className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.endDate ? shortFormatReadableDate(selectedBookingData.endDate) : "---"}</span>
+                                            <span className='text-secondary text-xs -mt-1'>End Date</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className='mb-5'>
+                                    <h4 className='text-xs text-secondary mb-2'>Quick Actions</h4>
+                                    <button className='mb-2 bg-primary text-white/80 flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary/85 hover:cursor-pointer transition-all duration-300'>
+                                        <Edit2Icon className='w-4 h-4 mr-3' /> <span className='text-xs'>Edit Recurring Rule</span>
+                                    </button>
+                                    <button className='mb-2 bg-white/80 text-primary flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary hover:cursor-pointer transition-all duration-300'>
+                                        <SkipForwardIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Skip Next Booking</span>
+                                    </button>
+
+                                    <hr className='max-md mb-2 text-secondary/50'/>
+
+                                    <button className='mb-2 bg-red-200 text-red-500 flex items-center justify-center p-2 w-full rounded-lg border-1 border-red-200 hover:text-red-500 hover:bg-red-300 hover:cursor-pointer transition-all duration-300'>
+                                        <XCircleIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Edit Recurring Rule</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </>
     )

@@ -889,11 +889,14 @@ export const getRecurringBookingData = (req, res) => {
             b.bookerContactNumber, b.totalAmount AS bookingTotalAmount,
             b.paymentMethod, b.status AS bookingStatus,
             
-            bs.slotTime, bs.rateApplied, bs.status AS slotStatus
+            bs.slotTime, bs.rateApplied, bs.status AS slotStatus,
+
+            c.courtSport, c.courtLabel, c.courtType
 
         FROM tbl_recurring_schedules rs
         JOIN tbl_bookings b ON rs.scheduleID = b.scheduleID
         JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
+        JOIN tbl_courts c ON c.courtID = rs.courtID
         WHERE rs.scheduleID = ?
         ORDER BY rs.scheduleID, b.bookingDate, bs.slotTime`;
 
@@ -918,6 +921,9 @@ export const getRecurringBookingData = (req, res) => {
                     paymentStatus: row.paymentStatus,
                     status: row.scheduleStatus,
                     remarks: row.remarks,
+                    courtLabel: row.courtLabel,
+                    courtSport: row.courtSport,
+                    courtType: row.courtType,
                     bookings: {}
                 };
             }
@@ -931,6 +937,9 @@ export const getRecurringBookingData = (req, res) => {
                     bookerFullName: row.bookerFullName,
                     bookerEmail: row.bookerEmail,
                     bookerContactNumber: row.bookerContactNumber,
+                    courtLabel: row.courtLabel,
+                    courtSport: row.courtSport,
+                    courtType: row.courtType,
                     totalAmount: row.bookingTotalAmount,
                     paymentMethod: row.paymentMethod,
                     status: row.bookingStatus,
@@ -951,6 +960,6 @@ export const getRecurringBookingData = (req, res) => {
             bookings: Object.values(schedule.bookings)
         }));
 
-        return response.ok(res, "Recurring schedule with bookings retrieved.", result);
+        return response.ok(res, "Recurring schedule with bookings retrieved.", result[0]);
     });
 };

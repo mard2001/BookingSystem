@@ -165,3 +165,12 @@ export const createRegularBooking = async (bookingDetail) => {
     }
 }
 
+export const getRegularSchedFutureBookings = async (scheduleID) => {
+    try {
+        const response = await api.get(`/api/v1/bookings/get/regular-booking-data/${scheduleID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
