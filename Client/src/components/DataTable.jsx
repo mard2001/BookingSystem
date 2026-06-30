@@ -7,7 +7,7 @@ import { FileDown } from "lucide-react";
 import { exportToCSV, exportToExcel } from "../utils/ExportTable";
 import { TablePagination } from "./DataTablePagination";
  
-export const DataTable = ({ data = [], columns = [], loading = false, error = null, placeholder = "Search...", pageSize = 5, exportFilename = "export", exportable = false }) => {
+export const DataTable = ({ data = [], columns = [], loading = false, error = null, placeholder = "Search...", pageSize = 5, exportFilename = "export", exportable = false, onRowClick  }) => {
     const [sorting, setSorting] = useState([]);
     const [globalFilter, setGlobalFilter] = useState("");
 
@@ -78,9 +78,9 @@ export const DataTable = ({ data = [], columns = [], loading = false, error = nu
                     <tr key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
                         <th
-                        key={header.id}
-                        onClick={header.column.getToggleSortingHandler()}
-                        className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 whitespace-nowrap"
+                            key={header.id}
+                            onClick={header.column.getToggleSortingHandler()}
+                            className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 whitespace-nowrap"
                         >
                             <span className="flex items-center justify-center gap-1">
                                 {flexRender(header.column.columnDef.header, header.getContext())}
@@ -98,7 +98,10 @@ export const DataTable = ({ data = [], columns = [], loading = false, error = nu
                 <tbody className="divide-y divide-gray-100 bg-foreground">
                 {table.getRowModel().rows.length > 0 ? (
                     table.getRowModel().rows.map(row => (
-                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                    <tr 
+                        key={row.id} 
+                        onClick={() => onRowClick?.(row.original)}
+                        className={`hover:bg-gray-50 transition-colors ${onRowClick ? "cursor-pointer" : ""}`}>
                         {row.getVisibleCells().map(cell => (
                         <td key={cell.id} className="px-4 py-3 text-gray-700 text-xs">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}

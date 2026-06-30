@@ -855,7 +855,7 @@ export const createRecurringSched = async (req, res) => {
 
 export const getRegularUser = (req, res) => {
     const query = `
-            SELECT a.scheduleID, a.frequency, a.dayOfWeek, a.dayOfMonth, a.startTime, a.endTime, a.totalAmount, a.paymentStatus, a.status, 
+            SELECT a.id, a.scheduleID, a.frequency, a.dayOfWeek, a.dayOfMonth, a.startTime, a.endTime, a.totalAmount, a.paymentStatus, a.status, 
                     a.accountID, b.email, c.firstName, c.lastName,
                     a.courtID, d.courtSport, d.courtLabel, d.courtType, a.createdAt
             FROM tbl_recurring_schedules a
@@ -894,7 +894,7 @@ export const getRecurringBookingData = (req, res) => {
             c.courtSport, c.courtLabel, c.courtType
 
         FROM tbl_recurring_schedules rs
-        JOIN tbl_bookings b ON rs.scheduleID = b.scheduleID
+        JOIN tbl_bookings b ON rs.id = b.scheduleID
         JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
         JOIN tbl_courts c ON c.courtID = rs.courtID
         WHERE rs.scheduleID = ?

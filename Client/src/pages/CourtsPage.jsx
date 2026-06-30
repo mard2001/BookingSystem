@@ -229,7 +229,7 @@ export const CourtsPage = () => {
       header: "Actions",
       id: "actions",
       cell: ({ row }) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => handleEdit(row.original)}
             className="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 hover:cursor-pointer"
@@ -279,6 +279,7 @@ export const CourtsPage = () => {
           pageSize={5}
           exportable={true}
           exportFilename={getExportFilename("courts")}
+          onRowClick={(rowData) => handleEdit(rowData)}
         />
       </div>
 

@@ -1,4 +1,4 @@
-import { CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, PlusCircle, SkipForwardIcon, User2, XCircleIcon } from 'lucide-react';
+import { Banknote, CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, PlusCircle, SkipForwardIcon, User2, XCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo } from 'react'
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
@@ -8,7 +8,7 @@ import { Modal } from '../components/Modal';
 import { getCourts } from '../api/services/courtService';
 import { getAllActiveCustomers } from '../api/services/usersService';
 import { toast } from 'sonner';
-import { addOneHour, formatSlotTime, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
+import { addOneHour, formatCurrency, formatReadableDate, formatSlotTime, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { validateForm } from '../utils/ValueValidate';
 import { newRecurringBookingRules } from '../Rules/BookingInputRules';
 import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
@@ -146,16 +146,16 @@ export const RegularReservationPage = () => {
                 </span>
             ),
         },
-        {
-            header: "Actions",
-            id: "actions",
-            cell: ({ row }) => (
-                <ActionDropdownBooking 
-                    row={row}
-                    onEdit={(data) => {handleViewModal(data)}}
-                />
-            ),
-        },
+        // {
+        //     header: "Actions",
+        //     id: "actions",
+        //     cell: ({ row }) => (
+        //         <ActionDropdownBooking 
+        //             row={row}
+        //             onEdit={(data) => {handleViewModal(data)}}
+        //         />
+        //     ),
+        // },
     ], []);
 
     useEffect(() => {
@@ -320,6 +320,7 @@ export const RegularReservationPage = () => {
                         pageSize={5}
                         exportable={true}
                         exportFilename={getExportFilename("regular-bookings")}
+                        onRowClick={(rowData) => handleViewModal(rowData)}
                     />
                 </div>
             </div>
@@ -530,7 +531,7 @@ export const RegularReservationPage = () => {
                                 name="remarks"
                                 value={newBooking.remarks}
                                 onChange={handleNewRegBookingChange}
-                                rows={3}
+                                rows={2}
                                 placeholder="Add any specific details or recurring billing instruction here..."
                                 className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none
                                 ${fieldErrors.remarks 
@@ -580,7 +581,6 @@ export const RegularReservationPage = () => {
                                 <div className='overflow-y-auto'>
                                     {selectedBookingData.bookings.length > 0 ? 
                                         selectedBookingData.bookings.map((upcomingBooking) => {
-                                            console.log("upcomingBooking",upcomingBooking)
                                             const bookingDate= new Date(upcomingBooking.bookingDate);
                                             const shortMonth = bookingDate.toLocaleDateString('en-US', {month: 'short'});
                                             const day = bookingDate.getDate();
@@ -625,6 +625,16 @@ export const RegularReservationPage = () => {
                                         </div>
                                     )}
                                 </div>
+                                <div>
+                                    <h4 className='text-xs text-secondary mb-2.5 mt-2'>Remarks / Notes / Comments</h4>
+                                    <textarea
+                                        value={selectedBookingData.remarks}
+                                        readOnly={true}
+                                        disabled={true}
+                                        rows={2}
+                                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none overflow-hidden focus:outline-none ring-1 focus:ring-2 ring-primary/30"
+                                    />
+                                </div>
                             </div>
                             <div className='order-1 md:order-2'>
                                 <div className='mb-5'>
@@ -643,7 +653,7 @@ export const RegularReservationPage = () => {
                                             <CalendarCheckIcon className='w-5 h-5 text-primary-lighter' />
                                         </div>
                                         <div className='flex flex-col'>
-                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.startDate && shortFormatReadableDate(selectedBookingData.startDate)}</span>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.startDate && formatReadableDate(selectedBookingData.startDate)}</span>
                                             <span className='text-secondary text-xs -mt-1'>Started Date</span>
                                         </div>
                                     </div>
@@ -652,8 +662,17 @@ export const RegularReservationPage = () => {
                                             <CalendarX className='w-5 h-5 text-primary-lighter' />
                                         </div>
                                         <div className='flex flex-col'>
-                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.endDate ? shortFormatReadableDate(selectedBookingData.endDate) : "---"}</span>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.endDate ? formatReadableDate(selectedBookingData.endDate) : "---"}</span>
                                             <span className='text-secondary text-xs -mt-1'>End Date</span>
+                                        </div>
+                                    </div>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <Banknote className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.totalAmount ? formatCurrency(selectedBookingData.totalAmount) : "---"}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Total Payable Amount</span>
                                         </div>
                                     </div>
                                 </div>

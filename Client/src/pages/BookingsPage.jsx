@@ -206,14 +206,16 @@ export const BookingsPage = () => {
       id: "actions",
       enableSorting: false,
       cell: ({ row }) => (
-        <ActionDropdownBooking
-          row={row}
-          onEdit={(data) => {handleEditModal(data)}}
-          onConfirm={(data) => handleEditBookingStatus("confirmed", data)}
-          onComplete={(data) => handleEditBookingStatus("completed", data)}
-          onCancel={(data) => handleEditBookingStatus("cancelled", data)}
-          onDelete={(data) => handleEditBookingStatus("deleted", data)}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <ActionDropdownBooking 
+            row={row}
+            onEdit={(data) => {handleEditModal(data)}}
+            onConfirm={(data) => handleEditBookingStatus("confirmed", data)}
+            onComplete={(data) => handleEditBookingStatus("completed", data)}
+            onCancel={(data) => handleEditBookingStatus("cancelled", data)}
+            onDelete={(data) => handleEditBookingStatus("deleted", data)}
+          />
+        </div>
       ),
     },
   ], []);
@@ -321,6 +323,7 @@ export const BookingsPage = () => {
         pageSize={5}
         exportable={true}
         exportFilename={getExportFilename("bookings")}
+        onRowClick={(rowData) => handleEditModal(rowData)}
       />
 
       <Modal open={editDetailsModalOpen} onClose={() => {setEditDetailsModalOpen(false); setIsEditing(false);}} size="lg">
