@@ -876,6 +876,7 @@ export const getRegularUser = (req, res) => {
 }
 
 export const getRecurringBookingData = (req, res) => {
+    if (!req.params.scheduleID) return response.badRequest(res, "Schedule ID is required.");
     const { scheduleID } = req.params;
 
     const query = `
@@ -962,4 +963,70 @@ export const getRecurringBookingData = (req, res) => {
 
         return response.ok(res, "Recurring schedule with bookings retrieved.", result[0]);
     });
+};
+
+export const cancelRegularAllBooking = async (req, res) => {
+    if (!req.params.scheduleID) return response.badRequest(res, "Schedule ID is required.");
+    const { scheduleID } = req.params;
+    const now = getCurrentTimestamp();
+
+    let connection;
+    try {
+        connection = await getPromiseConnection();
+        await connection.beginTransaction();
+
+        const [recurringRes] = await connection.query(
+            `UPDATE tbl_recurring_schedules SET status = "cancelled", updatedAt = ? WHERE id = ?`,
+            [now, scheduleID]
+        );
+
+        if (recurringRes.affectedRows === 0) {
+            await connection.rollback();
+            connection.release();
+            return response.ok(res, "No regular schedule data found", null);
+        }
+
+        const [bookingRows] = await connection.query(
+            `SELECT bookingID FROM tbl_bookings
+             WHERE scheduleID = ?
+               AND bookingDate >= ?
+               AND status NOT IN ("completed", "cancelled")
+             FOR UPDATE`,
+            [scheduleID, now]
+        );
+
+        if (bookingRows.length === 0) {
+            await connection.commit(); 
+            connection.release();
+            return response.ok(res, "No more remaining active bookings", null);
+        }
+
+        const bookingIDs = bookingRows.map(b => b.bookingID);
+
+        const [bookingRes] = await connection.query(
+            `UPDATE tbl_bookings SET status = "cancelled", updatedAt = ? WHERE bookingID IN (?)`,
+            [now, bookingIDs]
+        );
+
+        const [slotRes] = await connection.query(
+            `UPDATE tbl_booking_slots SET status = "cancelled", updatedAt = ? WHERE bookingID IN (?)`,
+            [now, bookingIDs]
+        );
+
+        await connection.commit();
+        connection.release();
+
+        return response.ok(res, "All upcoming bookings under this regular schedule are successfully cancelled.", {
+            cancelledBookingIDs: bookingIDs,
+            bookingsAffected: bookingRes.affectedRows,
+            slotsAffected: slotRes.affectedRows
+        });
+
+    } catch (err) {
+        if (connection) {
+            await connection.rollback();
+            connection.release();
+        }
+        return response.serverError(res, "Database error", err);
+    }
 };
