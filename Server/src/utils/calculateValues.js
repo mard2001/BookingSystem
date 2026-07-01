@@ -79,7 +79,11 @@ export const generateSlots = (startTime, endTime) => {
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH] = endTime.split(':').map(Number);
 
-    for (let h = startH; h < endH; h++) {
+    // Handle overnight schedules (e.g. 22:00 -> 02:00)
+    const totalHours = endH > startH ? endH - startH : (24 - startH) + endH;
+
+    for (let i = 0; i < totalHours; i++) {
+        const h = (startH + i) % 24;
         slots.push(`${String(h).padStart(2, '0')}:${String(startM).padStart(2, '0')}:00`);
     }
 

@@ -351,90 +351,6 @@ export const getHistoricalBookings = (req, res) => {
     })
 }
 
-export const confirmBooking2 = (req, res) => {
-    // return response.ok(res, 'Booking confirmed', req.body);
-    const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
-    const accountID = req.user.id;
-    if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
-        return response.badRequest(res, 'Missing required fields');
-
-    // begin transaction
-    db.beginTransaction(async (err) => {
-        if (err) return response.serverError(res, 'Transaction error', err);
-
-        // check conflicts
-        const placeholders = slotTimes.map(() => '?').join(',');
-        const conflictQuery = `
-            SELECT bs.slotTime
-            FROM tbl_booking_slots bs
-            JOIN tbl_bookings b ON b.bookingID = bs.bookingID
-            WHERE b.courtID = ?
-              AND b.bookingDate = ?
-              AND bs.slotTime IN (${placeholders})
-              AND bs.status = 'confirmed'
-              AND b.status NOT IN ('cancelled')
-        `;
-
-        db.query(conflictQuery, [courtID, bookingDate, ...slotTimes], (err, conflicts) => {
-            if (err) return db.rollback(() => response.serverError(res, 'Database error', err));
-
-            if (conflicts.length > 0) {
-                const takenSlots = conflicts.map(r => r.slotTime);
-                return db.rollback(() => response.conflict(res, 'Some slot was just taken by someone else. Please go back and reselect.', { takenSlots }));
-            }
-
-            db.query('SELECT * FROM tbl_courts WHERE courtID = ?', [courtID], (err, courts) => {
-                if (err) return db.rollback(() => response.serverError(res, 'Database error', err));
-
-                const court = courts[0];
-                const dayType = getDayType(bookingDate);
-
-                // compute total
-                let totalAmount = 0;
-                const slotData = slotTimes.map(slotTime => {
-                    const timeType = getTimeType(slotTime);
-                    const rateKey = getRateKey(dayType, timeType);
-                    const rateApplied = parseFloat(court[rateKey]);
-                    totalAmount += rateApplied;
-                    return { slotTime, rateApplied };
-                });
-
-                // insert booking header
-                generateBookingID(bookingDate, (err, bookingID) => {
-                    if (err) return db.rollback(() => response.serverError(res, 'Failed to generate booking ID', err));
-
-                    const insertBookingQuery = `
-                        INSERT INTO tbl_bookings (bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, status, createdAt, updatedAt)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
-                    `;
-
-                    db.query(insertBookingQuery, [bookingID, accountID, courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, totalAmount, paymentMethod, getCurrentTimestamp(), getCurrentTimestamp()], (err, result) => {
-                        if (err) return db.rollback(() => response.serverError(res, 'Database error', err));
-
-                        const newBookingID = result.insertId;
-                        if (!newBookingID) return db.rollback(() => response.serverError(res, 'Database error', err));
-
-                        const slotValues = slotData.map(s => [bookingID, s.slotTime, s.rateApplied, 'confirmed',getCurrentTimestamp(), getCurrentTimestamp()]);
-
-                        db.query(
-                            `INSERT INTO tbl_booking_slots (bookingID, slotTime, rateApplied, status, updatedAt, createdAt) VALUES ?`,
-                            [slotValues],
-                            (err) => {
-                                if (err) return db.rollback(() => response.serverError(res, 'Database error', err));
-
-                                db.commit((err) => {
-                                    if (err) return db.rollback(() => response.serverError(res, 'Commit error', err));
-                                    return response.ok(res, 'Booking confirmed', { bookingID, totalAmount });
-                                });
-                            }
-                        );
-                    });
-                });
-            });
-        });
-    });
-};
-
 export const confirmBooking = async (req, res) => {
     const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
     const accountID = -1;
@@ -881,7 +797,7 @@ export const getRecurringBookingData = (req, res) => {
 
     const query = `
         SELECT 
-            rs.scheduleID, rs.frequency, rs.dayOfWeek, rs.dayOfMonth,
+            rs.id, rs.scheduleID, rs.frequency, rs.dayOfWeek, rs.dayOfMonth,
             rs.startTime, rs.endTime, rs.startDate, rs.endDate,
             rs.totalAmount AS scheduleTotalAmount, rs.paymentStatus, 
             rs.status AS scheduleStatus, rs.remarks,
@@ -903,13 +819,14 @@ export const getRecurringBookingData = (req, res) => {
 
     db.query(query, [scheduleID], (err, rows) => {
         if (err) return response.serverError(res, "Database error", err);
-        if (rows.length === 0) return response.ok(res, "No data found", null);
+        if (rows.length === 0) return response.conflict(res, "No data found", null);
 
         const scheduleMap = {};
 
         rows.forEach(row => {
             if (!scheduleMap[row.scheduleID]) {
                 scheduleMap[row.scheduleID] = {
+                    id: row.id,
                     scheduleID: row.scheduleID,
                     frequency: row.frequency,
                     dayOfWeek: row.dayOfWeek,

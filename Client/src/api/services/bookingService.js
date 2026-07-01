@@ -174,3 +174,11 @@ export const getRegularSchedFutureBookings = async (scheduleID) => {
     }
 };
 
+export const getCancelWholeRegularSched = async (scheduleID) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/cancel-regular-schedule/${scheduleID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

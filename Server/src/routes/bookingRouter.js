@@ -15,11 +15,11 @@ bookingRouter.get('/get/slots/:courtID', getCourtSlots);
 bookingRouter.get('/get/regular-booking-data/:scheduleID', getRecurringBookingData);
 bookingRouter.post('/check/availability', checkAvailability);
 bookingRouter.post('/confirmbooking', confirmBooking);
+bookingRouter.post('/regularbooking', createRecurringSched);
 bookingRouter.put('/update/:bookingID/status', updateBookingStatus);
 bookingRouter.put('/update/:bookingID/booker-details', updateBookingBookerDetails);
 bookingRouter.put('/cancel/:bookingID/:paymentIntent', cancelBooking);
 bookingRouter.put('/cancel-regular-schedule/:scheduleID', cancelRegularAllBooking);
-bookingRouter.post('/regularbooking', createRecurringSched);
 
 
 

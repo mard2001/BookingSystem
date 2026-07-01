@@ -9,6 +9,7 @@ import paymentRouter from './src/routes/paymentRouter.js';
 import dashboardRouter from './src/routes/dashboardRouter.js';
 import { expireOverduePayments } from './src/jobs/cron/expirePayments.js';
 import cron from 'node-cron';
+import { completeBookings } from './src/jobs/cron/bookings.js';
 
 
 const app = express();
@@ -46,4 +47,14 @@ cron.schedule('*/2 * * * *', async () => {
     } catch (err) {
         console.error('[CRON] Unexpected error:', err);
     }
+});
+
+cron.schedule('11 11 * * *', async () => {
+    try {
+        await completeBookings();
+    } catch (err) {
+        console.error('[CRON] Unexpected error:', err);
+    }
+}, {
+    timezone: 'Asia/Manila'
 });

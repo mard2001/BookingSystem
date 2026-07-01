@@ -3,15 +3,16 @@ import React, { useEffect, useMemo } from 'react'
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { getExportFilename } from '../utils/ExportTable';
-import { createRegularBooking, fetchOfferedSlots, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
+import { createRegularBooking, fetchOfferedSlots, getCancelWholeRegularSched, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
 import { Modal } from '../components/Modal';
-import { getCourts } from '../api/services/courtService';
+import { getAvailableCourts, getCourts } from '../api/services/courtService';
 import { getAllActiveCustomers } from '../api/services/usersService';
 import { toast } from 'sonner';
 import { addOneHour, formatCurrency, formatReadableDate, formatSlotTime, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { validateForm } from '../utils/ValueValidate';
 import { newRecurringBookingRules } from '../Rules/BookingInputRules';
 import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
+import { getTomorrowDate } from '../utils/Calculate';
 
 const DAYS = [
     { label: "M", value: 1 },
@@ -174,7 +175,7 @@ export const RegularReservationPage = () => {
 
         const fetchCourts = async () => {
             try {
-                const courts = await getCourts();
+                const courts = await getAvailableCourts();
                 setCourtData(courts.data);
             } catch (err) {
                 toast.error(err.message);
@@ -259,7 +260,6 @@ export const RegularReservationPage = () => {
         const errors = validateForm(newBooking, newRecurringBookingRules);
         if (Object.keys(errors).length > 0) {
             setFieldErrors(errors); 
-            console.log(errors)
             return;
         }
         setFieldErrors({}); 
@@ -286,11 +286,24 @@ export const RegularReservationPage = () => {
 
     const handleViewModal = async (booking) => {
         setSelectedBookingData(null);
-
         try {
             const bookingData = await getRegularSchedFutureBookings(booking.scheduleID);
             setSelectedBookingData(bookingData.data);
             if (bookingData.data) setViewModalOpen(true);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    }
+
+    const handleSchedCancellation = async (schedID) => {
+        try {
+            const dataResponse = await getCancelWholeRegularSched(schedID);
+            if (dataResponse){
+                toast.success(dataResponse.message)
+                const bookings = await getRegularBookings();
+                setData(bookings.data);
+                setViewModalOpen(false);
+            }
         } catch (error) {
             toast.error(error.message);
         }
@@ -468,6 +481,7 @@ export const RegularReservationPage = () => {
                                 <input 
                                     type="date" 
                                     name="startDate" 
+                                    min={getTomorrowDate()}
                                     value={newBooking.startDate} 
                                     onChange={handleNewRegBookingChange}
                                     className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-secondary
@@ -484,6 +498,7 @@ export const RegularReservationPage = () => {
                                 <input 
                                     type="date" 
                                     name="endDate" 
+                                    min={getTomorrowDate()}
                                     value={newBooking.endDate} 
                                     onChange={handleNewRegBookingChange}
                                     className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-secondary
@@ -561,19 +576,19 @@ export const RegularReservationPage = () => {
                 {selectedBookingData && (
                     <div>
                         <h2 className="text-xl font-bold text-primary mb-1">Regular Schedule Details</h2>
-                        <p className="text-sm text-secondary mb-6 flex items-center">
-                            <CalendarSync className='w-4 h-4 mr-2' />
-                            {selectedBookingData.scheduleID}
-                            <span className='mx-2'>|</span>
-                            {displayFrequency(
+                        <div className="text-sm text-secondary mb-6 flex items-center max-sm:flex-col max-sm:items-start">
+                            
+                            <span className='flex'><CalendarSync className='w-4 h-4 mr-2' /> {selectedBookingData.scheduleID}</span>
+                            <span className='mx-2 max-sm:hidden'>|</span>
+                            <span>{displayFrequency(
                                 selectedBookingData.frequency,
                                 selectedBookingData.dayOfWeek,
                                 selectedBookingData.startTime,
                                 selectedBookingData.dayOfMonth 
-                            )}
-                            <span className='mx-2'>|</span>
-                            {selectedBookingData.courtLabel}
-                        </p>
+                            )}</span>
+                            <span className='mx-2 max-sm:hidden'>|</span>
+                            <span>{selectedBookingData.courtLabel}</span>
+                        </div>
                         <hr className='max-md mb-5 text-secondary/30'/>
                         <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
                             <div className='order-2 md:order-1 md:col-span-3'>
@@ -586,9 +601,9 @@ export const RegularReservationPage = () => {
                                             const day = bookingDate.getDate();
                                             
                                             const slots = upcomingBooking.slots;
-                                            const firstTime = slots[0]?.slotTime;
+                                            const firstTime = formatSlotTime(slots[0]?.slotTime);
                                             const lastTime = slots[slots.length - 1]?.slotTime;
-                                            const endTime = addOneHour(lastTime);
+                                            const endTime = formatSlotTime(addOneHour(lastTime));
         
                                             const statusMap = {
                                                 "confirmed": { label: "Confirmed", style: "bg-green-100 text-green-700" },
@@ -678,8 +693,8 @@ export const RegularReservationPage = () => {
                                 </div>
                                 <div className='mb-5'>
                                     <h4 className='text-xs text-secondary mb-2'>Quick Actions</h4>
-                                    <button className='mb-2 bg-primary text-white/80 flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary/85 hover:cursor-pointer transition-all duration-300'>
-                                        <Edit2Icon className='w-4 h-4 mr-3' /> <span className='text-xs'>Edit Recurring Rule</span>
+                                    <button className='mb-2 bg-primary text-white/80 flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary/90 hover:cursor-pointer transition-all duration-300'>
+                                        <Edit2Icon className='w-4 h-4 mr-3' /> <span className='text-xs'>Edit Regular Schedule</span>
                                     </button>
                                     <button className='mb-2 bg-white/80 text-primary flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary hover:cursor-pointer transition-all duration-300'>
                                         <SkipForwardIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Skip Next Booking</span>
@@ -687,8 +702,10 @@ export const RegularReservationPage = () => {
 
                                     <hr className='max-md mb-2 text-secondary/50'/>
 
-                                    <button className='mb-2 bg-red-200 text-red-500 flex items-center justify-center p-2 w-full rounded-lg border-1 border-red-200 hover:text-red-500 hover:bg-red-300 hover:cursor-pointer transition-all duration-300'>
-                                        <XCircleIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Edit Recurring Rule</span>
+                                    <button
+                                        onClick={() => handleSchedCancellation(selectedBookingData.id)} 
+                                        className='mb-2 bg-red-200 text-red-500 flex items-center justify-center p-2 w-full rounded-lg border-1 border-red-200 hover:text-red-500 hover:bg-red-300 hover:cursor-pointer transition-all duration-300'>
+                                        <XCircleIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Cancel Regular Schedule</span>
                                     </button>
                                 </div>
                             </div>
