@@ -14,7 +14,7 @@ const LandingPage = () => {
             <LandingHero />
             <LandingFacility />
             <AppointmentFormProvider>
-                <div id='reservation' className='min-h-screen py-12 px-4'>
+                <div id='reservation' className='min-h-screen pt-35 px-4'>
                     <div>
                         <div className='text-center mb-15'>
                             <h1 className='text-primary max-sm:text-4xl text-5xl font-bold mb-4'>Book Your Next Pickleball Match</h1>

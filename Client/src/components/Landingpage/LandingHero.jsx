@@ -4,7 +4,7 @@ import { LandingCards } from './LandingCards'
 
 const LandingHero = () => {
   return (
-    <div id="features" className='relative mb-20'>
+    <div id="features" className='relative'>
       {/* Hero Image Section */}
       <div className='heroLandingImage h-[70vh] flex flex-col justify-center'>
         <div className='px-10 md:pl-30 mt-25'>

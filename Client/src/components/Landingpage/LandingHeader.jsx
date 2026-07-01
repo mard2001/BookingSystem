@@ -52,7 +52,7 @@ export const LandingHeader = () => {
                 <div className="absolute -inset-2 bg-white/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition" />
                 <img
                     src="images/ylayaSmashRallyTransparent3.png"
-                    className={`${isScrolled ? "w-25 h-25" : "max-md:w-30 max-md:h-30 w-40 h-40"} max-md:w-30 max-md:h-30 object-contain drop-shadow-lg relative z-10 transition-all duration-900`}
+                    className={`${isScrolled ? "w-15 h-15" : "max-md:w-30 max-md:h-30 w-40 h-40"} max-md:w-30 max-md:h-30 object-contain drop-shadow-lg relative z-10 transition-all duration-900`}
                 />
                 </div>
 
