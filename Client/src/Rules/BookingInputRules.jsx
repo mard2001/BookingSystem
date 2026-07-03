@@ -13,3 +13,9 @@ export const newRecurringBookingRules = {
     startDate: { required: true }, 
     totalAmount: { required: true },
 }
+
+export const editRecurringBookingData = {
+    scheduleID: { required: true }, 
+    totalAmount: { required: true }, 
+    paymentStatus: { required: true }, 
+}

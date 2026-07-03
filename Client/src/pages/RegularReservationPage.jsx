@@ -1,16 +1,16 @@
-import { Banknote, CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, PlusCircle, SkipForwardIcon, User2, XCircleIcon } from 'lucide-react';
+import { Banknote, BanknoteArrowDownIcon, CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, PlusCircle, SkipForwardIcon, User2, XCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo } from 'react'
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { getExportFilename } from '../utils/ExportTable';
-import { createRegularBooking, fetchOfferedSlots, getCancelWholeRegularSched, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
+import { createRegularBooking, editRegularBooking, fetchOfferedSlots, getCancelWholeRegularSched, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
 import { Modal } from '../components/Modal';
 import { getAvailableCourts, getCourts } from '../api/services/courtService';
 import { getAllActiveCustomers } from '../api/services/usersService';
 import { toast } from 'sonner';
-import { addOneHour, formatCurrency, formatReadableDate, formatSlotTime, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
+import { addOneHour, formatCurrency, formatDateOnly, formatReadableDate, formatSlotTime, shortFormatReadableDate, shortFormatReadableDateTime } from '../utils/ValueFormat';
 import { validateForm } from '../utils/ValueValidate';
-import { newRecurringBookingRules } from '../Rules/BookingInputRules';
+import { editRecurringBookingData, newRecurringBookingRules } from '../Rules/BookingInputRules';
 import { ActionDropdownBooking } from '../components/ActionDropdownBooking';
 import { getTomorrowDate } from '../utils/Calculate';
 
@@ -39,6 +39,10 @@ export const RegularReservationPage = () => {
     const [timeSlots, setTimeSlots] = useState([]);
     const [selectedBookingData, setSelectedBookingData] = useState(null);      
     const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editBookingData, setEditBookingData] = useState({
+        "scheduleID":"", "endDate":"", "totalAmount": 0, "remarks":"", "paymentStatus": ""
+    })
 
 
     const formatTime = (timeStr) => {
@@ -284,12 +288,37 @@ export const RegularReservationPage = () => {
         }
     }
 
+    const handleEditSubmit = async () => {
+        const errors = validateForm(editBookingData, editRecurringBookingData);
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors); 
+            return;
+        }
+        setFieldErrors({}); 
+
+        try {
+            const editData = await editRegularBooking(editBookingData);
+            toast.success(editData.message);
+
+            setSelectedBookingData(prev => ({
+                ...prev,
+                ...editBookingData
+            }));
+
+            setEditModalOpen(false);
+            setFieldErrors({});
+        } catch (error) {
+            toast.error(error.message);
+        }
+    }
+
     const handleViewModal = async (booking) => {
         setSelectedBookingData(null);
         try {
             const bookingData = await getRegularSchedFutureBookings(booking.scheduleID);
             setSelectedBookingData(bookingData.data);
             if (bookingData.data) setViewModalOpen(true);
+            handleSetEditData(bookingData.data)
         } catch (error) {
             toast.error(error.message);
         }
@@ -307,6 +336,27 @@ export const RegularReservationPage = () => {
         } catch (error) {
             toast.error(error.message);
         }
+    }
+
+    const handleEditRegBookingChange = async (e) => {
+        console.log(e)
+        const { name, value } = e.target;
+        
+        setEditBookingData(prev => ({ ...prev, [name]: value }));
+    }
+
+    const handleSetEditData = (data) => {
+        setEditBookingData(prev => {
+            const updated = { ...prev };
+
+            Object.keys(prev).forEach(key => {
+                if (key in data) {
+                    updated[key] = data[key];
+                }
+            });
+
+            return updated;
+        });
     }
     
     return (
@@ -690,25 +740,215 @@ export const RegularReservationPage = () => {
                                             <span className='text-secondary text-xs -mt-1'>Total Payable Amount</span>
                                         </div>
                                     </div>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <BanknoteArrowDownIcon className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold capitalize'>{selectedBookingData.paymentStatus}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Payment Status</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className='mb-5'>
                                     <h4 className='text-xs text-secondary mb-2'>Quick Actions</h4>
-                                    <button className='mb-2 bg-primary text-white/80 flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary/90 hover:cursor-pointer transition-all duration-300'>
+                                    <button 
+                                        disabled={selectedBookingData.status == 'cancelled'}
+                                        onClick={() => {setEditModalOpen(true)}}
+                                        className='mb-2 bg-primary text-white/80 flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary/90 hover:cursor-pointer transition-all duration-300 disabled:bg-primary/40 disabled:text-white/50 disabled:border-primary/40 disabled:cursor-not-allowed disabled:hover:bg-primary/40 disabled:hover:text-white/50'
+                                    >
                                         <Edit2Icon className='w-4 h-4 mr-3' /> <span className='text-xs'>Edit Regular Schedule</span>
                                     </button>
-                                    <button className='mb-2 bg-white/80 text-primary flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary hover:cursor-pointer transition-all duration-300'>
+                                    {/* <button className='mb-2 bg-white/80 text-primary flex items-center justify-center p-2 w-full rounded-lg border-1 border-primary hover:text-white/80 hover:bg-primary hover:cursor-pointer transition-all duration-300'>
                                         <SkipForwardIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Skip Next Booking</span>
-                                    </button>
+                                    </button> */}
 
                                     <hr className='max-md mb-2 text-secondary/50'/>
-
+                                    
                                     <button
+                                        disabled={selectedBookingData.status == 'cancelled'}
                                         onClick={() => handleSchedCancellation(selectedBookingData.id)} 
-                                        className='mb-2 bg-red-200 text-red-500 flex items-center justify-center p-2 w-full rounded-lg border-1 border-red-200 hover:text-red-500 hover:bg-red-300 hover:cursor-pointer transition-all duration-300'>
-                                        <XCircleIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>Cancel Regular Schedule</span>
+                                        className='mb-2 bg-red-200 text-red-500 flex items-center justify-center p-2 w-full rounded-lg border-1 border-red-200 hover:text-red-500 hover:bg-red-300 hover:cursor-pointer transition-all duration-300 disabled:bg-red-100 disabled:text-red-300 disabled:border-red-100 disabled:cursor-not-allowed disabled:hover:bg-red-100 disabled:hover:text-red-300'
+                                    >
+                                        <XCircleIcon className='w-4 h-4 mr-3' /> <span className='text-xs'>{selectedBookingData.status == 'cancelled' ? "Regular Schedule Cancelled" : "Cancel Regular Schedule"}</span>
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)} size="">
+                {selectedBookingData && (
+                    <div>
+                        <h2 className="text-xl font-bold text-primary mb-1">Edit Schedule</h2>
+                        <p className="text-sm text-secondary mb-6">Edit the details of a regular schedule.</p>
+                        <hr className='flex-1 text-secondary/30'/>
+
+                        <div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Schedule ID</span>
+                                </div>
+                                <div className={`flex items-center border border-gray-200 rounded-xl text-sm bg-white/60 px-4 py-1 shadow-sm hover:shadow-md transition-shadow duration-300 gap focus-within:ring-2 focus:bg-white/80`}>
+                                    <input 
+                                        type="text" 
+                                        name="scheduleID" 
+                                        id="scheduleID"
+                                        value={editBookingData.scheduleID}
+                                        disabled={true}
+                                        readOnly={true}
+                                        placeholder='e.g 1000'
+                                        className={`h-7 w-full bg-transparent focus:outline-none text-gray-700 placeholder:text-gray-400`}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Scheduled Court</span>
+                                </div>
+                                <div className={`flex items-center border border-gray-200 rounded-xl text-sm bg-white/60 px-4 py-1 shadow-sm hover:shadow-md transition-shadow duration-300 gap focus-within:ring-2 focus:bg-white/80`}>
+                                    <input 
+                                        type="text" 
+                                        name="courtLabel" 
+                                        id="courtLabel"
+                                        value={selectedBookingData.courtLabel}
+                                        disabled={true}
+                                        readOnly={true}
+                                        className={`h-7 w-full bg-transparent focus:outline-none text-gray-700 placeholder:text-gray-400`}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Scheduled Time</span>
+                                </div>
+                                <div className={`flex items-center border border-gray-200 rounded-xl text-sm bg-white/60 px-4 py-1 shadow-sm hover:shadow-md transition-shadow duration-300 gap focus-within:ring-2 focus:bg-white/80`}>
+                                    <input 
+                                        type="text" 
+                                        name="scheduleTime" 
+                                        id="scheduleTime"
+                                        value={displayFrequency(
+                                            selectedBookingData.frequency,
+                                            selectedBookingData.dayOfWeek,
+                                            selectedBookingData.startTime,
+                                            selectedBookingData.dayOfMonth 
+                                        )}
+                                        disabled={true}
+                                        readOnly={true}
+                                        className={`h-7 w-full bg-transparent focus:outline-none text-gray-700 placeholder:text-gray-400`}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Date Started</span>
+                                </div>
+                                <input 
+                                    type="date" 
+                                    name="startDate" 
+                                    value={formatDateOnly(selectedBookingData.startDate)} 
+                                    disabled={true}
+                                    readOnly={true}
+                                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-secondary`} />
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>End Date</span>
+                                </div>
+                                <input 
+                                    type="date" 
+                                    name="endDate" 
+                                    min={getTomorrowDate()}
+                                    value={editBookingData.endDate ? formatDateOnly(editBookingData.endDate): ''} 
+                                    onChange={handleEditRegBookingChange}
+                                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-secondary
+                                    ${fieldErrors.endDate 
+                                        ? "border-red-500 focus:ring-red-300" 
+                                        : "border-gray-200 focus:ring-primary/30"
+                                    }`} />
+                                {fieldErrors.endDate && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.endDate} </span>)}
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Total Payable Amount</span>
+                                </div>
+                                <div className={`flex items-center border border-gray-200 rounded-xl text-sm bg-white/60 px-4 py-1 shadow-sm hover:shadow-md transition-shadow duration-300 gap focus-within:ring-2 focus:bg-white/80
+                                    ${fieldErrors.totalAmount 
+                                        ? "border-red-500 focus:ring-red-300" 
+                                        : "border-gray-200 focus:ring-primary/30"
+                                    }`}>
+                                    <input 
+                                        type="number" 
+                                        name="totalAmount" 
+                                        id="totalAmount"
+                                        value={editBookingData.totalAmount}
+                                        onChange={handleEditRegBookingChange}
+                                        placeholder='e.g 1000'
+                                        className={`h-7 w-full bg-transparent focus:outline-none text-gray-700 placeholder:text-gray-400`}
+                                        onKeyDown={(e) => {
+                                            const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"]
+                                            if (!/^\d$/.test(e.key) && !allowed.includes(e.key)) e.preventDefault()
+                                        }}
+                                    />
+                                </div>
+                                {fieldErrors.totalAmount && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.totalAmount} </span>)}
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Payment Status</span>
+                                </div>
+                                <div className={`flex items-center border border-gray-200 rounded-xl text-sm bg-white/60 px-4 py-1 shadow-sm hover:shadow-md transition-shadow duration-300 gap focus-within:ring-2 focus:bg-white/80
+                                    ${fieldErrors.paymentStatus 
+                                        ? "border-red-500 focus:ring-red-300" 
+                                        : "border-gray-200 focus:ring-primary/30"
+                                    }`}>
+                                    <select
+                                        name='paymentStatus'
+                                        id="paymentStatus" 
+                                        value={editBookingData.paymentStatus}
+                                        onChange={handleEditRegBookingChange}
+                                        className='h-7 w-full text-secondary bg-transparent focus:outline-none text-gray-700 text-sm hover:cursor-pointer'
+                                    >
+                                        <option value="" disabled>Select Status</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="partially paid">Partially Paid</option>
+                                        <option value="fully paid">Fully Paid</option>
+                                    </select>
+                                </div>
+                                {fieldErrors.paymentStatus && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.paymentStatus} </span>)}
+                            </div>
+                            <div>
+                                <div className='mt-2'>
+                                    <span className='text-[10px] font-semibold uppercase tracking-widest text-primary'>Remarks / Notes / Comments</span>
+                                </div>
+                                <textarea
+                                    name="remarks"
+                                    value={editBookingData.remarks}
+                                    onChange={handleEditRegBookingChange}
+                                    rows={2}
+                                    placeholder="Add any specific details or recurring billing instruction here..."
+                                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none
+                                    ${fieldErrors.remarks 
+                                        ? "border-red-500 focus:ring-red-300" 
+                                        : "border-gray-200 focus:ring-primary/30"
+                                    }`}
+                                />
+                                {fieldErrors.remarks && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.remarks} </span>)}
+                            </div>
+                        </div>
+                        <div className="border-t border-gray-100 pt-4 flex justify-end gap-3">
+                            <button 
+                            onClick={() => {setFieldErrors({}); setEditModalOpen(false)}}
+                                className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer">
+                                Cancel Edit
+                            </button>
+                            <button 
+                            onClick={handleEditSubmit}
+                                className="px-5 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90 hover:cursor-pointer">
+                                Save Changes
+                            </button>
                         </div>
                     </div>
                 )}

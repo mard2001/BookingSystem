@@ -947,3 +947,19 @@ export const cancelRegularAllBooking = async (req, res) => {
         return response.serverError(res, "Database error", err);
     }
 };
+
+export const updateRecurringBookingData = async (req, res) => {
+    if (!validateFields(req, res, ['paymentStatus', 'scheduleID', 'totalAmount'])) return;
+
+    const { endDate, remarks, scheduleID, totalAmount, paymentStatus } = req.body;
+    const validStatuses = ['pending', 'partially paid', 'fully paid'];
+    if (!validStatuses.includes(paymentStatus)) return response.badRequest(res, 'Invalid status value.');
+    const updateQuery = `UPDATE tbl_recurring_schedules SET endDate=?, remarks=?, totalAmount=?, updatedAt =? WHERE scheduleID = ?`;
+
+    db.query(updateQuery, [endDate, remarks, totalAmount, getCurrentTimestamp(), scheduleID], (err, resData)=> {
+        if (err) return response.serverError(res, "Database error", err);
+        if (resData.affectedRows === 0) return response.notFound(res, "Booking not found.");
+
+        return response.ok(res, `Regular schedule successfully updated.`);
+    })
+}

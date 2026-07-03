@@ -182,3 +182,12 @@ export const getCancelWholeRegularSched = async (scheduleID) => {
         throw error;
     }
 };
+
+export const editRegularBooking = async (editData) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/update-regular-schedule`, {...editData});
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}

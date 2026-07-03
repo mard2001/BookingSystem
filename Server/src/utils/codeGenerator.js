@@ -17,7 +17,7 @@ export const generateBookingID = (bookingDate, callback) => {
         (err, results) => {
             if (err) return callback(err);
             const sequence = String(results[0].count + 1).padStart(4, '0');
-            callback(null, `BK-${dateStr}-${sequence}`);
+            callback(null, `BK${dateStr}${sequence}`);
         }
     );
 };
@@ -32,7 +32,7 @@ export const generateRegularBookingID = () => {
             (err, results) => {
                 if (err) return reject(err);
                 const sequence = String(results[0].count + 1).padStart(4, '0');
-                resolve(`REGBK-${dateStr}-${sequence}`);
+                resolve(`REGBK${sequence}`);
             }
         );
     });
