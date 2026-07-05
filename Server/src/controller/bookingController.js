@@ -588,6 +588,44 @@ export const cancelBooking = async (req, res) => {
     }
 };
 
+const checkDatesAvailability = async (conn, courtID, dates, slots) => {
+    const unavailable = [];
+
+    for (const date of dates) {
+        const [blackout] = await conn.query(`
+            SELECT id FROM tbl_blackout_dates
+            WHERE isActive = 1
+                AND ? BETWEEN blackoutDateStart AND blackoutDateEnd
+                AND (scope = 'venue' OR (scope = 'court' AND courtID = ?))
+        `, [date, courtID]);
+
+        if (blackout.length > 0) {
+            unavailable.push({ date, reason: 'blackout' });
+            continue;
+        }
+
+        const [conflict] = await conn.query(`
+            SELECT bs.slotTime
+            FROM tbl_booking_slots bs
+            JOIN tbl_bookings b ON b.bookingID = bs.bookingID
+            WHERE b.courtID = ?
+              AND b.bookingDate = ?
+              AND b.status NOT IN ('cancelled', 'rejected')
+              AND bs.slotTime IN (?)
+        `, [courtID, date, slots]);
+
+        if (conflict.length > 0) {
+            unavailable.push({
+                date,
+                reason: 'conflict',
+                conflictingSlots: conflict.map(c => c.slotTime)
+            });
+        }
+    }
+
+    return unavailable;
+};
+
 export const generateBookingsForSchedule = async (scheduleID) => {
     const conn = await getPromiseConnection();
     try {
