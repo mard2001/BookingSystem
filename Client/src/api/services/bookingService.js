@@ -81,9 +81,9 @@ export const confirmBooking = async (courtID, bookingDetails, bookingDate, slotT
     }
 }
 
-export const getBookingsCalendarData = async(startDateTime, endDateTime) => {
+export const getBookingsCalendarData = async(startDate, endDate) => {
     try {
-        const response = await api.get("/api/v1/bookings/get/calendar-data?startDate=2026-05-01&endDate=2026-06-31");
+        const response = await api.get(`/api/v1/bookings/get/calendar-data?startDate=${startDate}&endDate=${endDate}`);
         return response;
     } catch (error) {
         throw error;
