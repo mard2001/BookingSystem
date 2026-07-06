@@ -752,7 +752,7 @@ export const createRecurringSched = async (req, res) => {
         'accountID', 'courtID', 'frequency', 'startTime', 'endTime', 'startDate', 'totalAmount'
     ])) return;
 
-    const { accountID, courtID, frequency, dayOfWeek, dayOfMonth, startTime, endTime, startDate, endDate, totalAmount, remarks } = req.body;
+    const { accountID, courtID, frequency, dayOfWeek, dayOfMonth, startTime, endTime, startDate, endDate, totalAmount, remarks, confirmed } = req.body;
 
     // normalize dayOfWeek to array
     const daysArray = Array.isArray(dayOfWeek) ? dayOfWeek : dayOfWeek != null ? [dayOfWeek] : [];
@@ -764,6 +764,60 @@ export const createRecurringSched = async (req, res) => {
 
     const sanitizedEndDate = (endDate && endDate !== '' && endDate !== '0000-00-00') ? endDate : null;
     const now = getCurrentTimestamp();
+    const dayList = frequency === 'weekly' ? daysArray : [null];
+    const slots = generateSlots(startTime, endTime);
+
+    if (!confirmed) {
+        const conn = await getPromiseConnection();
+        let unavailableByDay = [];
+        let hasAnyBookableDate = false;
+
+        try {
+            for (const day of dayList) {
+                const virtualSchedule = {
+                    frequency,
+                    dayOfWeek: day,
+                    dayOfMonth: frequency === 'monthly' ? dayOfMonth : null,
+                    startDate,
+                    endDate: sanitizedEndDate
+                };
+
+                const targetDates = getUpcomingDates(virtualSchedule, 4);
+                if (targetDates.length === 0) {
+                    console.log("targetDates = 0")
+                    // No upcoming occurrences at all for this day within the window
+                    unavailableByDay.push({ dayOfWeek: day, dates: [], reason: 'no_upcoming_dates' });
+                    continue;
+                }
+                const unavailable = await checkDatesAvailability(conn, courtID, targetDates, slots);
+
+                if (unavailable.length > 0) {
+                    unavailableByDay.push({ dayOfWeek: day, dates: unavailable });
+                }
+
+                if (unavailable.length < targetDates.length) {
+                    hasAnyBookableDate = true;
+                }
+            }
+        } finally {
+            conn.release();
+        }
+
+        if (unavailableByDay.length > 0) {
+            if (!hasAnyBookableDate) {
+                // Every single target date across every day is unavailable — hard block
+                return response.badRequest(res,
+                    'All upcoming dates for this schedule are unavailable. Please choose a different day, time, or court.',
+                    { unavailableDates: unavailableByDay, blocked: true }
+                );
+            }
+            
+            return response.ok(res, 'Some dates in this recurring schedule are unavailable.', {
+                requiresConfirmation: true,
+                unavailableDates: unavailableByDay
+            });
+        }
+    }
 
     const sqlCreate = `
         INSERT INTO tbl_recurring_schedules

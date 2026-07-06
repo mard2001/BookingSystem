@@ -42,7 +42,10 @@ export const RegularReservationPage = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editBookingData, setEditBookingData] = useState({
         "scheduleID":"", "endDate":"", "totalAmount": 0, "remarks":"", "paymentStatus": ""
-    })
+    });
+    const [pendingPayload, setPendingPayload] = useState(null);
+    const [conflictModalOpen, setConflictModalOpen] = useState(false);
+    const [conflictData, setConflictData] = useState(null);
 
 
     const formatTime = (timeStr) => {
@@ -260,24 +263,30 @@ export const RegularReservationPage = () => {
         });
     };
 
-    const handleAddSubmit = async () => {
-        const errors = validateForm(newBooking, newRecurringBookingRules);
-        if (Object.keys(errors).length > 0) {
-            setFieldErrors(errors); 
-            return;
-        }
-        setFieldErrors({}); 
-
+    const submitRegularBooking = async (payload) => {
         try {
-            const added = await createRegularBooking(newBooking);
+            const added = await createRegularBooking(payload);
+
+            if (added.data?.requiresConfirmation) {
+                setPendingPayload(payload);
+                setConflictData(added.data.unavailableDates);
+                setConflictModalOpen(true);
+                return;
+            }
+
             const bookings = await getRegularBookings();
             setData(bookings.data);
-    
+
             toast.success(added.message);
             setAddModalOpen(false);
+            setConflictModalOpen(false);
             setFieldErrors({});
+            setPendingPayload(null);
+            setConflictData(null);
             setNewBooking({
-                "accountID":"", "courtID":"", "frequency":"weekly", "dayOfWeek": [], "dayOfMonth":"0", "selectedTimes":[], "startTime":"", "endTime":"", "startDate":"", "endDate":"", "totalAmount": 0, "remarks":""
+                "accountID":"", "courtID":"", "frequency":"weekly", "dayOfWeek": [], "dayOfMonth":"0",
+                "selectedTimes":[], "startTime":"", "endTime":"", "startDate":"", "endDate":"",
+                "totalAmount": 0, "remarks":""
             });
         } catch (err) {
             toast.error(err.message);
@@ -286,7 +295,28 @@ export const RegularReservationPage = () => {
                 setFieldErrors(errors);
             }
         }
+    };
+
+    const handleAddSubmit = async () => {
+        const errors = validateForm(newBooking, newRecurringBookingRules);
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors); 
+            return;
+        }
+        setFieldErrors({});
+        await submitRegularBooking(newBooking);
     }
+
+    const handleConfirmContinue = async () => {
+        if (!pendingPayload) return;
+        await submitRegularBooking({ ...pendingPayload, confirmed: true });
+    };
+
+    const handleConfirmCancel = () => {
+        setConflictModalOpen(false);
+        setPendingPayload(null);
+        setConflictData(null);
+    };
 
     const handleEditSubmit = async () => {
         const errors = validateForm(editBookingData, editRecurringBookingData);
@@ -952,6 +982,50 @@ export const RegularReservationPage = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            <Modal open={conflictModalOpen} onClose={handleConfirmCancel} size="">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <CalendarX className="w-5 h-5 text-yellow-500" />
+                        <h2 className="text-xl font-bold text-primary">Some Dates Are Unavailable</h2>
+                    </div>
+                    <p className="text-sm text-secondary mb-6">
+                        The following upcoming dates in this recurring schedule conflict with existing bookings or blackout dates. These dates will be skipped automatically — the rest of the schedule will proceed as normal.
+                    </p>
+
+                    <div className="max-h-64 overflow-y-auto space-y-3">
+                        {conflictData?.map((dayGroup, i) => (
+                            <div key={i}>
+                                {dayGroup.dates.map((d, j) => (
+                                    <div key={j} className="border border-yellow-200 bg-yellow-50 rounded-lg px-4 py-2 mb-1.5 flex items-center justify-between">
+                                        <span className="text-sm text-gray-700">{formatReadableDate(d.date)}</span>
+                                        <span className="text-xs text-yellow-700 font-medium">
+                                            {d.reason === 'blackout'
+                                                ? 'Venue/court closed'
+                                                : `Conflicts at ${d.conflictingSlots?.map(formatSlotTime).join(', ')}`}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="border-t border-gray-100 mt-4 pt-4 flex justify-end gap-3">
+                        <button
+                            onClick={handleConfirmCancel}
+                            className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer"
+                        >
+                            Go Back &amp; Edit
+                        </button>
+                        <button
+                            onClick={handleConfirmContinue}
+                            className="px-5 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90 hover:cursor-pointer"
+                        >
+                            Continue Anyway
+                        </button>
+                    </div>
+                </div>
             </Modal>
         </>
     )
