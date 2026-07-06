@@ -43,24 +43,24 @@ export const Sidebar = () => {
         { label: "Regular Schedules", path: "/bookings/regular-reservation" },
       ]
     },
-    { label: "Courts", icon: MapPin, path: "/courts", roles: ["superadmin", "admin", "staff"] },
-    // {
-    //   label: "Courts", icon: MapPin, path: "/courts", roles: ["admin", "staff"],
-    //   children: [
-    //     { label: "Court List", path: "/courts" },
-    //     { label: "Availability", path: "/courts/availability" },
-    //   ]
-    // },
-    { label: "Users", icon: Users, path: "/customers", roles: ["superadmin", "admin"] },
-    { label: "My Profile", icon: UserCircle2, path: "/profile", roles: ["superadmin", "admin", "customer"] },
+    // { label: "Courts", icon: MapPin, path: "/courts", roles: ["superadmin", "admin", "staff"] },
     {
-      label: "Settings", icon: SettingsIcon, path: "/settings/closures", roles: ["superadmin", "admin"],
+      label: "Courts", icon: MapPin, path: "/courts", roles: ["superadmin", "admin"],
       children: [
-        { label: "Court Closures", path: "/settings/closures" },
-        // { label: "Calendar View", path: "/bookings/calendar" },
-        // { label: "Walk-ins", path: "/bookings/walkins" },
+        { label: "Court List", path: "/courts" },
+        { label: "Court Closures", path: "/courts/closures" },
       ]
     },
+    { label: "Users", icon: Users, path: "/customers", roles: ["superadmin", "admin"] },
+    { label: "My Profile", icon: UserCircle2, path: "/profile", roles: ["superadmin", "admin", "customer"] },
+    // {
+      // label: "Settings", icon: SettingsIcon, path: "/settings/closures", roles: ["superadmin", "admin"],
+      // children: [
+      //   { label: "Court Closures", path: "/settings/closures" },
+      //   // { label: "Calendar View", path: "/bookings/calendar" },
+      //   // { label: "Walk-ins", path: "/bookings/walkins" },
+      // ]
+    // },
   ];
 
   const visibleNavItems = navItems.filter(item => item.roles.includes(role));

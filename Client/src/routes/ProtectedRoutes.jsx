@@ -94,7 +94,7 @@ export const ProtectedRoutes = [
 
     {
         key:"ClosurePage",
-        path: "/settings/closures",
+        path: "/courts/closures",
         element:(
             <ProtectedRouteChecker allowedRoles={ADMIN_ROLES}>
                 <MainLayout>
