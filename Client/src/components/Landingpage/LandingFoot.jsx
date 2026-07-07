@@ -14,22 +14,22 @@ export const LandingFoot = () => {
                     px-8 py-3.5 rounded-lg
                     text-sm 
                     transition-all duration-300
-                    hover:bg-white/50 hover:text-[#005c9d]
+                    hover:bg-white/50 hover:text-primary-lightdark
                     hover:ring-2 hover:ring-white/50
                     active:scale-95 group hover:cursor-pointer
                 ">
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-[#005c9d]/30 to-transparent skew-x-12" />
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-primary-lightdark/30 to-transparent skew-x-12" />
                 <span className="relative">Start Playing Now</span>
             </button>
 
             <button className="
                     relative overflow-hidden
-                    bg-white text-[#005c9d]
+                    bg-white text-lightdark
                     px-8 py-3.5 rounded-lg
                     text-sm 
                     transition-all duration-300
-                    hover:bg-[#005c9d] hover:text-white
-                    hover:ring-2 hover:ring-[#005c9d]
+                    hover:bg-primary-lightdark hover:text-white
+                    hover:ring-2 hover:ring-primary-lightdark
                     active:scale-95 group hover:cursor-pointer
                 ">
                 <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />

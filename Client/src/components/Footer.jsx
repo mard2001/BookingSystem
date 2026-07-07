@@ -5,7 +5,7 @@ const Footer = () => {
     <div>
       <div className='relative flex px-10 pb-10 border-t border-secondary-foreground/20 pt-5 space-x-10 shadow-[0_-4px_6px_rgba(0,0,0,0.1)]'>
         <div className='grow relative'>
-            <img src="./images/ylayaSmashRallyTransparent3.png" className='w-20 h-auto' />
+            <img src="./images/bunalBrad_Transparent1.png" className='w-20 h-auto' />
             <div className='w-[30%]'>
                 <span className='text-secondary'>Premium pickleball experience designed for those who demand the best in recreational facilities and athletic excellence.</span>
             </div>
@@ -31,7 +31,7 @@ const Footer = () => {
         </div>
       </div>
       <div className='px-10 pb-10'>
-        <span className='text-secondary/40 text-xs'>© 2024 Ylaya Smash Rally. ALL RIGHTS RESERVED.</span>
+        <span className='text-secondary/40 text-xs'>© 2026 Bunal Brad. ALL RIGHTS RESERVED.</span>
       </div>
     </div>
   )

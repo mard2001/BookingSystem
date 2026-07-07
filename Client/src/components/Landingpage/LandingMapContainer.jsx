@@ -2,10 +2,11 @@
 
 import React from 'react'
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { BUSINESS_INFO } from '../../constants/contants';
 
 export const LandingMapContainer = () => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    const position = { lat: 10.374327, lng: 123.922846 };
+    const position = BUSINESS_INFO.longlat;
 
     return (
         <APIProvider apiKey={apiKey} >

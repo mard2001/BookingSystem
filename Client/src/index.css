@@ -4,29 +4,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #D6E8F7;      
-  --color-foreground: #E8EFF2;       
+  --color-background: #F8F1F3;      /* Soft rose white */
+  --color-foreground: #FDF9FA;      /* Off-white */
 
-  --color-card: #FFFFFF;             
-  --color-surface: #9AB3C4;          
+  --color-card: #FFFFFF;
+  --color-surface: #9AB3C4;         /* Muted rose */
 
-  --color-primary-brighter: #5BA3D0;   
-  --color-primary: #005c9d;           
+  --color-primary-brighter: #A43D52;   /* Bright maroon */
+  --color-primary: #690000;            /* Main maroon */
   --color-primary-foreground: #FFFFFF;
-  --color-primary-darker: #001D34;
-  --color-primary-lightdark: #00629D;
-  --color-primary-lighter: #aecfe6;
+  --color-primary-darker: #3B0000;     /* Deep burgundy */
+  --color-primary-lightdark: #8B1E3F;  /* Wine */
+  --color-primary-lighter: #E8C6CF;    /* Light blush */
 
-  --color-secondary-brighter: #8A9BA3; 
-  --color-secondary: #697c83;         
+  --color-secondary-brighter: #8A9BA3; /* Dusty rose */
+  --color-secondary: #697c83;          /* Muted maroon */
   --color-secondary-foreground: #FFFFFF;
 
-  --color-muted: #4E6370;             
-  --color-muted-foreground: #A8BBC4;   
+  --color-tertiary: #1d293d;  
 
-  --color-border: #3D5F75;            
+  --color-muted: #6B4A53;              /* Muted wine */
+  --color-muted-foreground: #B99AA3;   /* Soft rose gray */
 
-  --color-highlight: #004F8A;       
+  --color-border: #8A5A67;             /* Rose border */
+
+  --color-highlight: #8B1538;          /* Accent crimson */
   --radius: 0.75rem;
 }
 
@@ -52,7 +54,7 @@
   
   body{
     /* background-color: var(--color-surface); */
-    background: linear-gradient(to bottom, #FFF, color-mix(in srgb, var(--color-primary) 40%, transparent));
+    background: linear-gradient(to bottom, #FFF, color-mix(in srgb, var(--color-primary) 30%, transparent));
   }
 
   .sx-react-calendar-wrapper {
@@ -91,13 +93,13 @@
     background-image: 
     linear-gradient(
       to bottom,
-      rgba(0, 92, 157, 0.95) 0%,    
-      rgba(0, 92, 157, 0.95) 40%,   
-      rgba(0, 92, 157, 0.92) 75%,   
-      rgba(0, 20, 45, 0.95)  100%  
+      rgba(128, 0, 32, 0.85) 0%,     
+      rgba(128, 0, 32, 0.85) 40%,   
+      rgba(110, 0, 28, 0.92) 65%,   
+      rgb(14, 3, 6) 100%    
     ),
-    url(images/ylayaCourt2.jpg);
-    background-position: center;
+    url(images/bunalBradCourt2.png);
+    background-position: top;
     background-repeat: no-repeat;
     background-size: cover;
     border-bottom-left-radius: 50px;

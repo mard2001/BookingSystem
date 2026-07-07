@@ -5,6 +5,7 @@ import { getStoredUser } from '../../utils/LocalVariables';
 import { BarChart, CalendarDaysIcon, ChevronDown, ChevronLeft, ChevronRight, HomeIcon, LayoutDashboard, LogOutIcon, MapPin, MenuIcon, Settings, SettingsIcon, UserCircle2, Users, X } from 'lucide-react';
 import { getDecryptedRole } from '../../utils/Crypto';
 import { useAuth } from '../../context/AuthContext';
+import { BUSINESS_INFO } from '../../constants/contants';
 
 export const Sidebar = () => {
   const user = getStoredUser();
@@ -78,11 +79,11 @@ export const Sidebar = () => {
           {/* Logo always visible */}
           <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
             <a href="/">
-              <img src="/images/ylayaSmashRallyTransparent3.png" className="w-9 shrink-0" />
+              <img src="/images/bunalBrad_Transparent1.png" className="w-9 shrink-0" />
             </a>
             {!isCollapsed && (
               <div>
-                <p className="font-bold text-sm whitespace-nowrap text-white/90">Ylaya Smash Rally</p>
+                <p className="font-bold text-sm whitespace-nowrap text-white/90">{BUSINESS_INFO.name}</p>
                 <p className="text-xs text-white/60">Admin Portal</p>
               </div>
             )}

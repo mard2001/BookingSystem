@@ -4,7 +4,7 @@ import { Header } from '../components/MainLayout/Header'
 
 export const MainLayout = ({ children }) => {
     return (
-       <div className="flex h-screen bg-surface/50">
+       <div className="flex h-screen bg-surface/40">
             <Sidebar />
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Header />

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { registerUserCustomer } from '../../api/services/usersService';
 import { registerRules } from '../../Rules/AuthInputRules';
 import { validateForm } from '../../utils/ValueValidate';
+import { BUSINESS_INFO } from '../../constants/contants';
 
 const Register = ({ open, onClose, onSwitchToLogin }) => {
     const [ isPasswordVisible, setIsPasswordVisible ] = useState(false);
@@ -57,7 +58,7 @@ const Register = ({ open, onClose, onSwitchToLogin }) => {
         <Modal open={open} onClose={onClose} size="lg">
             <div className='mb-10 '>
                 <div className='flex justify-start items-center px-5'>
-                    <img src="./images/ylayaSmashRallyTransparent3.png" alt="" className='w-17 h-17 mr-2' />
+                    <img src={`./images/${BUSINESS_INFO.logoName}`} alt="" className='w-17 h-17 mr-2' />
                     <div className='my-4 text-start'>
                         <h3 className='text-2xl font-semibold text-primary capitalize whitespace-nowrap'>Join the Rally!</h3>
                         <p className="text-sm text-gray-500">Create your account to start booking courts.</p>

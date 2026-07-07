@@ -1,6 +1,7 @@
 import { Check, MapPin } from 'lucide-react'
 import React from 'react'
 import { LandingMapContainer } from './LandingMapContainer'
+import { BUSINESS_INFO } from '../../constants/contants'
 
 export const LandingFacility = () => {
   return (
@@ -9,7 +10,7 @@ export const LandingFacility = () => {
             <div className='px-10 xl:pl-20 mb-5'>
                 <p className='uppercase tracking-wide text-primary '>The Facility</p>
                 <p className='uppercase text-3xl mb-5'>A New Standard in Recreational Excellence</p>
-                <p className='text-muted'>Ylaya Smash Rally isn't just about courts; it's about the community and the experience. Our complex features eight championship-grade acrylic surfaces that provide consistent bounce and reduced impact on joints.</p>
+                <p className='text-muted text-sm'>Bunal Brad Courts is more than just a place to play—it's a destination built around community, competition, and unforgettable experiences. Our outdoor courts engineered to deliver consistent ball bounce, excellent traction, and enhanced comfort, creating the ideal environment for players of all skill levels to enjoy the game.</p>
             </div>
 
             <div className='px-10 xl:px-20 mb-5'>
@@ -30,8 +31,21 @@ export const LandingFacility = () => {
                         <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
                             <Check className='w-4 h-4 text-primary'/>
                         </div>
+                        <span className='pl-2 text-highlight text-sm'>Night Play Ready</span>
+                    </div>
+                    <div className='flex items-center'>
+                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
+                            <Check className='w-4 h-4 text-primary'/>
+                        </div>
                         <span className='pl-2 text-highlight text-sm'>Climate Control</span>
                     </div>
+                    <div className='flex items-center'>
+                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
+                            <Check className='w-4 h-4 text-primary'/>
+                        </div>
+                        <span className='pl-2 text-highlight text-sm'>Hydration Stations</span>
+                    </div>
+                    
                 </div>
             </div>
             <div className="px-10 xl:px-20 relative">
@@ -43,7 +57,7 @@ export const LandingFacility = () => {
                 <div className='w-[90%] md:w-full xl:w-138 bg-white/50 flex items-center justify-center rounded-2xl shadow-lg inset-shadow-sm p-4'>
                     <div className='relative w-full h-100 lg:h-auto'>
                         <img 
-                            src="./images/ylayaCourt.jpg" 
+                            src="./images/bunalBradCourt.png" 
                             alt="" 
                             className='w-full h-100 lg:h-auto object-cover rounded-xl' 
                         />
@@ -55,7 +69,7 @@ export const LandingFacility = () => {
                             </div>
                             <div className='flex flex-col'>
                                 <span className='uppercase trailing-wide text-primary text-sm'>Find Us</span>
-                                <span className='text-xs'>Santo Nino Ylaya, Talamban, Cebu City</span>
+                                <span className='text-xs'>{BUSINESS_INFO.address}</span>
                             </div>
                         </div>
                     </div>

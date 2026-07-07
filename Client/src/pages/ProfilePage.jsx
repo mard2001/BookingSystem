@@ -176,7 +176,7 @@ export const ProfilePage = () => {
                     </div>
                     <div className="flex max-md:mt-5 max-md:space-x-2 md:flex-col">
                         <button onClick={() => {setIsPasswordVisible(false); setEditModalOpen(true)}}
-                            className="flex items-center justify-center px-6 py-2 text-xs bg-primary border-1 border-primary text-white rounded-lg hover:bg-primary-darker hover:text-white hover:cursor-pointer mb-1">
+                            className="flex items-center justify-center px-6 py-2 text-xs bg-tertiary border-1 border-primary text-white rounded-lg hover:bg-primary-darker hover:text-white hover:cursor-pointer mb-1">
                             <Pen className="w-5 h-5 mr-2" /> Edit Account
                         </button>
                         <button onClick={() => {setAddModalOpen(true)}}

@@ -5,6 +5,7 @@ import { ArrowRight, Eye, EyeOff, LockIcon, UserCircle2Icon } from 'lucide-react
 import { useLogin } from '../../hooks/authApi';
 import { validateForm } from '../../utils/ValueValidate';
 import { loginRules } from '../../Rules/AuthInputRules';
+import { BUSINESS_INFO } from '../../constants/contants';
 
 export const Login = ({ open, onClose, onSwitchToRegister }) => {
     const [ isPasswordVisible, setIsPasswordVisible ] = useState(false);
@@ -39,7 +40,7 @@ export const Login = ({ open, onClose, onSwitchToRegister }) => {
     return (
         <Modal open={open} onClose={onClose} size="md">
             <div className='text-center-w-56 mb-10'>
-                <img src="./images/ylayaSmashRallyTransparent3.png" alt="" className='w-30 h-30 mx-auto' />
+                <img src={`./images/${BUSINESS_INFO.logoName}`} alt="" className='w-30 h-30 mx-auto' />
                 <div className='mx-auto my-4 text-center'>
                     <h3 className='text-2xl font-semibold text-primary capitalize whitespace-nowrap'>Welcome Back, Champ!</h3>
                     <p className="text-sm text-gray-500">The court's been waiting — glad you're here.</p>

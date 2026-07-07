@@ -6,6 +6,7 @@ import Register from '../UserAuth/Register';
 import { logout } from '../../api/services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { getDecryptedRole } from '../../utils/Crypto';
+import { BUSINESS_INFO } from '../../constants/contants';
 
 export const LandingHeader = () => {
     const role = getDecryptedRole();
@@ -38,7 +39,7 @@ export const LandingHeader = () => {
         <>
        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
                 isScrolled
-                ? 'bg-[#005c9d]/95 backdrop-blur-md py-3 border-b border-white/10 shadow-lg shadow-[#005c9d]/30'
+                ? 'bg-primary-darker/95 backdrop-blur-md py-3 border-b border-white/10 shadow-lg shadow-primary-lightdark/30'
                 : 'bg-transparent py-5'
             }`}
         >
@@ -51,14 +52,14 @@ export const LandingHeader = () => {
                 {/* Glow behind logo */}
                 <div className="absolute -inset-2 bg-white/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition" />
                 <img
-                    src="images/ylayaSmashRallyTransparent3.png"
+                    src={`images/${BUSINESS_INFO.logoName}`}
                     className={`${isScrolled ? "w-15 h-15" : "max-md:w-30 max-md:h-30 w-40 h-40"} max-md:w-30 max-md:h-30 object-contain drop-shadow-lg relative z-10 transition-all duration-900`}
                 />
                 </div>
 
                 {/* Nav Links — center */}
                 <ul className="hidden md:flex items-center gap-8">
-                {['Features', 'Courts', 'Pricing', 'Reservation'].map((link) => (
+                {['Features', 'Courts', 'Reservation'].map((link) => (
                     <li key={link}>
                     
                     <a href={`#${link.toLowerCase()}`}
@@ -85,7 +86,7 @@ export const LandingHeader = () => {
                         </button>
 
                         {/* Dropdown */}
-                        <div className="absolute right-0 top-full mt-2 w-44 bg-[#005c9d]/95 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div className="absolute right-0 top-full mt-2 w-44 bg-primary/95 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="px-4 py-3 border-b border-white/10">
                             <p className="text-white text-xs font-bold truncate">{loggedInUser.firstName +" "+ loggedInUser.lastName}</p>
                             <p className="text-white/50 text-xs truncate">{loggedInUser.email}</p>
@@ -123,22 +124,24 @@ export const LandingHeader = () => {
                 <div className="hidden md:block w-px h-5 bg-white/20" />
 
                 {/* Book Now CTA */}
-                <button className="
-                    relative overflow-hidden
-                    bg-white text-[#005c9d]
-                    px-3 py-2 lg:px-5 lg:py-2.5 rounded-lg
-                    text-xs lg:text-sm font-black tracking-wider uppercase
-                    transition-all duration-300
-                    hover:bg-[#005c9d] hover:text-white
-                    hover:ring-2 hover:ring-white/40
-                    active:scale-95
-                    group
-                    hover:cursor-pointer
-                ">
-                    {/* Shimmer sweep */}
-                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
-                    <span className="relative whitespace-nowrap">Book Now →</span>
-                </button>
+                <a href="#reservation">
+                    <button className="
+                        relative overflow-hidden
+                        bg-white text-primary-darker
+                        px-3 py-2 lg:px-5 lg:py-2.5 rounded-lg
+                        text-xs lg:text-sm font-black tracking-wider uppercase
+                        transition-all duration-300
+                        hover:bg-primary-darker hover:text-white
+                        hover:ring-2 hover:ring-white/40
+                        active:scale-95
+                        group
+                        hover:cursor-pointer
+                    ">
+                        {/* Shimmer sweep */}
+                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+                        <span className="relative whitespace-nowrap">Book Now →</span>
+                    </button>
+                </a>
 
                 {/* Mobile hamburger */}
                 <button
@@ -192,13 +195,6 @@ export const LandingHeader = () => {
                                 className="text-white/80 hover:text-white text-sm font-semibold tracking-wide transition-colors duration-200"
                             >
                                 My Profile
-                            </a>
-                            
-                            <a href="#bookings"
-                                onClick={() => setMenuOpen(false)}
-                                className="text-white/80 hover:text-white text-sm font-semibold tracking-wide transition-colors duration-200"
-                            >
-                                My Bookings
                             </a>
                             
                             <button
