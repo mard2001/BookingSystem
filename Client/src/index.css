@@ -98,7 +98,7 @@
       rgba(110, 0, 28, 0.92) 65%,   
       rgb(14, 3, 6) 100%    
     ),
-    url(images/bunalBradCourt2.png);
+    url(../images/bunalBradCourt2.png);
     background-position: top;
     background-repeat: no-repeat;
     background-size: cover;
