@@ -9,7 +9,7 @@ import { delay } from '../../utils/ApiHandler';
 import { BookingConfirmation } from './BookingConfirmation';
 import { useEffect } from 'react';
 import QRPayment from '../Payment/QRPayment';
-import { GCashPayment } from '../Payment/GCashPayment';
+import { ManualEWalletPayment } from '../Payment/ManualEWalletPayment';
 
 export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, setIsConfirmed, onSuccess, onConfirm }) => {
     const { formData, resetForm, updatePaymentMethod, updateBookingResult, nextStep, goToStep } = useAppointmentFormContext();
@@ -159,10 +159,15 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
         cancelBookingInitiation(qrBooking?.bookingID, paymentIntentID);
     }
 
-    const handleCloseGcash =() => {
+    const handleCloseEWallet =() => {
         setShowEWallet(false);
         cancelBookingInitiationViaEwallet(eWalletBooking?.bookingID);
     }
+
+    const handleGcashExpired = (booking) => {
+        handleCloseEWallet();  
+        toast.error(`Payment window expired for booking ${booking.bookingID}`);
+    };
 
     const handleEWalletManualConfirmation = () => {
         setEWalletBooking(null);
@@ -333,10 +338,11 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
             )}
 
             {showEWallet && eWalletBooking && (
-                <GCashPayment
+                <ManualEWalletPayment
                     booking={eWalletBooking}
-                    onClose={handleCloseGcash}
+                    onClose={handleCloseEWallet}
                     onPaymentSuccess={handleEWalletManualConfirmation}
+                    onExpire={handleGcashExpired}
                 />
             )}
 

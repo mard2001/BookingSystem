@@ -66,6 +66,7 @@ export const paymentOptions = [
     },
 ];
 
+export const ALLOCATED_SECONDS = 1 * 60;
 export const ALLOWED_ROLES = ["admin","superadmin"]; 
 export const ADMIN_ROLES = ["admin", "superadmin"];
 export const ALL_ROLES = ["admin", "superadmin", "customer"];

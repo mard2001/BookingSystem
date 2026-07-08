@@ -176,3 +176,8 @@ export const formatDateOnly = (date) => {
         timeZone: 'Asia/Manila',
     });
 };
+
+// 600 (in seconds) 
+// 10:00
+export const formatClockTime = (s) =>
+        `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;

@@ -1,17 +1,25 @@
-import { X, Copy, Check } from 'lucide-react'
+import { X, Copy, Check, ClockAlertIcon } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { BUSINESS_INFO } from '../../constants/contants'
-import { addOneHour, formatReadableDate, formatSlotTime } from '../../utils/ValueFormat'
+import { ALLOCATED_SECONDS, BUSINESS_INFO } from '../../constants/contants'
+import { addOneHour, formatClockTime, formatReadableDate, formatSlotTime } from '../../utils/ValueFormat'
+import { usePayment } from '../../hooks/usePayment'
 
-export const GCashPayment = ({ booking, onClose, onPaymentSuccess }) => {
-    
+export const ManualEWalletPayment = ({ booking, onClose, onPaymentSuccess, onExpire }) => {
     const [copied, setCopied] = useState(false);
+
+    const [secondsLeft, setSecondsLeft] = useState(() => {
+        const referenceTime = booking?.updatedAt ?? booking?.createdAt;
+        if (!referenceTime) return ALLOCATED_SECONDS;
+
+        const elapsed = Math.floor((Date.now() - new Date(referenceTime).getTime()) / 1000);
+        return Math.max(ALLOCATED_SECONDS - elapsed, 0);
+    });
 
     const eWalletAccount = BUSINESS_INFO.bankaccounts.find(
         (account) => account.accountProvider === booking.bookingDetails.paymentInfo.paymentMethod
     );
-    console.log(booking, eWalletAccount)
+    
     useEffect(() => {
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
@@ -19,6 +27,25 @@ export const GCashPayment = ({ booking, onClose, onPaymentSuccess }) => {
             document.body.style.overflow = originalOverflow;
         };
     }, []);
+
+    useEffect(() => {
+        if (secondsLeft <= 0) {
+            onExpire?.(booking);  
+            return;
+        }
+
+        const intervalId = setInterval(() => {
+            setSecondsLeft((prev) => {
+                if (prev <= 1) {
+                    clearInterval(intervalId);
+                    return 0; 
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    }, [secondsLeft <= 0]);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -51,6 +78,8 @@ export const GCashPayment = ({ booking, onClose, onPaymentSuccess }) => {
         const len = booking.bookingDetails.dateTimeInfo.time?.length ?? 0;
         return len > 0 ? `${len}${len > 1 ? 'hrs.' : 'hr.'}` : "No time selected";
     };
+
+    
 
     return createPortal(
         <div
@@ -153,10 +182,18 @@ export const GCashPayment = ({ booking, onClose, onPaymentSuccess }) => {
                         </span>
                     </div>
                 </div>
+                
+                <div className="flex justify-center items-center gap-1.5 text-sm text-gray-500 mt-6 mb-2">
+                    <ClockAlertIcon size={16} className="text-amber-500" />
+                    Expires in{' '}
+                    <span className="font-mono font-semibold text-amber-500">
+                        {formatClockTime(secondsLeft)}
+                    </span>
+                </div>
 
                 <button 
                     onClick={() => onPaymentSuccess(booking)}
-                    className="w-full mt-6 bg-primary-darker text-white py-3 rounded-xl font-medium transition-opacity hover:opacity-80 hover:cursor-pointer duration-300 transition-colors">
+                    className="w-full bg-primary-darker text-white py-3 rounded-xl font-medium transition-opacity hover:opacity-80 hover:cursor-pointer duration-300 transition-colors">
                     Confirm Payment
                 </button>
             </div>
