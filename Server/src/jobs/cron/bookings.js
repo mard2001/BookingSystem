@@ -33,9 +33,9 @@ export const completeBookings = async () => {
 
             await conn.query(`
                 UPDATE tbl_booking_slots
-                SET status = 'completed'
+                SET status = 'completed', updatedAt = ?
                 WHERE bookingID IN (?)
-            `, [bookingIDs]);
+            `, [now, bookingIDs]);
 
             await conn.commit();
             console.log(`[CRON] Completed ${bookingIDs.length} booking(s):`, bookingIDs);
@@ -50,3 +50,59 @@ export const completeBookings = async () => {
         console.error('[CRON] Failed to fetch bookings to complete:', error);
     }
 }
+
+export const pendingBookingsExceededAllocatedTime = async () => {
+    const now = getCurrentTimestamp();
+
+    try {
+        const [pendingBookings] = await db.promise().query(`
+            SELECT b.bookingID
+            FROM tbl_bookings b
+            WHERE b.status = 'pending'
+                AND b.scheduleID IS NULL
+                AND b.updatedAt <= NOW() - INTERVAL 1 MINUTE
+        `);
+
+        if (pendingBookings.length === 0) return;
+
+        const bookingIDs = pendingBookings.map(b => b.bookingID);
+        const conn = await getPromiseConnection();
+        try {
+            await conn.beginTransaction();
+
+            await conn.query(`
+                UPDATE tbl_bookings
+                SET status = 'cancelled', updatedAt = ?
+                WHERE bookingID IN (?)
+            `, [now, bookingIDs]);
+
+            await conn.query(`
+                UPDATE tbl_booking_slots
+                SET status = 'cancelled', updatedAt = ?
+                WHERE bookingID IN (?)
+            `, [now, bookingIDs]);
+
+            await conn.commit();
+            console.log(`[CRON] Cancelled ${bookingIDs.length} booking(s):`, bookingIDs);
+        } catch (error) {
+            await conn.rollback();
+            console.error('[CRON] Failed to update pending bookings, rolled back:', error);
+        } finally {
+            conn.release();
+        }
+        
+    } catch (error) {
+        console.error('[CRON] Failed to fetct expired bookings making it available once again:', error);
+    }
+}
+
+
+// SELECT b.bookingID
+//             FROM tbl_bookings b
+//             JOIN (
+//                 SELECT bookingID, MAX(slotTime) AS lastSlotTime
+//                 FROM tbl_booking_slots
+//                 GROUP BY bookingID
+//             ) s ON s.bookingID = b.bookingID
+//             WHERE b.status = 'pending'
+//                 AND DATE_ADD(TIMESTAMP(b.bookingDate, s.lastSlotTime), INTERVAL 1 HOUR) <= '2026-07-08 14:30:45'

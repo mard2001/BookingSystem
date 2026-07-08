@@ -9,7 +9,7 @@ import paymentRouter from './src/routes/paymentRouter.js';
 import dashboardRouter from './src/routes/dashboardRouter.js';
 import { expireOverduePayments } from './src/jobs/cron/expirePayments.js';
 import cron from 'node-cron';
-import { completeBookings } from './src/jobs/cron/bookings.js';
+import { completeBookings, pendingBookingsExceededAllocatedTime } from './src/jobs/cron/bookings.js';
 
 
 const app = express();
@@ -42,7 +42,7 @@ app.listen(process.env.SERVER_PORT, () => {
 })
 
 
-cron.schedule('*/2 * * * *', async () => {
+cron.schedule('*/2 * * * *', async () => { //Runs Every 2 Mins.
     try {
         await expireOverduePayments();
     } catch (err) {
@@ -50,7 +50,15 @@ cron.schedule('*/2 * * * *', async () => {
     }
 });
 
-cron.schedule('11 11 * * *', async () => {
+cron.schedule('*/5 * * * *', async () => { //Runs Every 5 Mins.
+    try {
+        await pendingBookingsExceededAllocatedTime();
+    } catch (err) {
+        console.error('[CRON] Unexpected error:', err);
+    }
+});
+
+cron.schedule('0 0 * * *', async () => { //Runs every day at 12:00 AM PH time
     try {
         await completeBookings();
     } catch (err) {
