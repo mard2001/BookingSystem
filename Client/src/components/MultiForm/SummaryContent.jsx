@@ -1,14 +1,15 @@
 import React, { forwardRef, useImperativeHandle, useState, useCallback } from 'react'
 import { useAppointmentFormContext } from '../../context/AppointmentFormContext'
 import { Banknote, CalendarCheck2, CreditCard, Ratio, User2Icon } from 'lucide-react';
-import { paymentOptions } from '../../constants/contants';
+import { allPaymentOptions, BUSINESS_INFO, paymentOptions } from '../../constants/contants';
 import { addOneHour, formatSlotTime, getDayType, getRateKey, getTimeType } from '../../utils/ValueFormat';
-import { cancelBookingInitiation, checkAvailability, confirmBooking } from '../../api/services/bookingService';
+import { cancelBookingInitiation, cancelBookingInitiationViaEwallet, checkAvailability, confirmBooking, confirmBookingViaEwallet } from '../../api/services/bookingService';
 import { toast } from 'sonner';
 import { delay } from '../../utils/ApiHandler';
 import { BookingConfirmation } from './BookingConfirmation';
 import { useEffect } from 'react';
 import QRPayment from '../Payment/QRPayment';
+import { GCashPayment } from '../Payment/GCashPayment';
 
 export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, setIsConfirmed, onSuccess, onConfirm }) => {
     const { formData, resetForm, updatePaymentMethod, updateBookingResult, nextStep, goToStep } = useAppointmentFormContext();
@@ -20,6 +21,8 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
     const [isResetForm, setIsResetForm] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [qrBooking, setQrBooking] = useState(null);
+    const [showEWallet, setShowEWallet] = useState(false);
+    const [eWalletBooking, setEWalletBooking] = useState(null);
     const [paymentIntentID, setPaymentIntentID] = useState(null);
 
     const court = formData.courtInfo.court;
@@ -83,7 +86,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
             setIsSubmitting(true);
             await delay(1000);
 
-            const bookingStatus = selectedPayment === 'online' ? 'pending' : 'confirmed';
+            const bookingStatus = selectedPayment === 'court' ? 'confirmed' : 'pending';
             const submitRes = await confirmBooking(court.courtID, formData, bookingDate, times, selectedPayment, bookingStatus);
             await delay(500);
 
@@ -91,11 +94,8 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                 toast.error(submitRes.message);
                 return;
             }
-            // updatePaymentMethod(selectedPayment);
-            // updateBookingResult(submitRes.data.bookingID, totalAmount);
 
             if (selectedPayment === 'online') {
-                // goToStep(5); // ✅ instead of nextStep()
                 setQrBooking({
                     bookingID: submitRes.data.bookingID,
                     bookingDetails: {
@@ -111,6 +111,21 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
 
                 console.log("formData",formData);
                 setShowQR(true);
+            } else if(selectedPayment === 'gcash' || selectedPayment === 'paymaya' || selectedPayment === 'bpi') {
+                setEWalletBooking({
+                    bookingID: submitRes.data.bookingID,
+                    bookingDetails: {
+                        ...formData,
+                        paymentInfo: {
+                            ...formData.paymentInfo,
+                            paymentMethod: selectedPayment,
+                            bookingID: submitRes.data.bookingID,
+                            totalAmount,
+                        }
+                    }
+                });
+                
+                setShowEWallet(true);
             } else {
                 toast.success(submitRes.message);
                 setIsConfirmed(true);
@@ -144,6 +159,23 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
         cancelBookingInitiation(qrBooking?.bookingID, paymentIntentID);
     }
 
+    const handleCloseGcash =() => {
+        setShowEWallet(false);
+        cancelBookingInitiationViaEwallet(eWalletBooking?.bookingID);
+    }
+
+    const handleEWalletManualConfirmation = () => {
+        setEWalletBooking(null);
+        const confirmation = confirmBookingViaEwallet(eWalletBooking?.bookingID);
+        if(confirmation){
+            setShowEWallet(false);
+            setIsConfirmed(true);
+            setIsConfirmBooking({ bookingID: eWalletBooking.bookingID });
+        } else{
+            toast.error(confirmation.message)
+        }
+    }
+
     const handleQRPaymentSuccess = useCallback(() => {
         setShowQR(false);
         setIsConfirmed(true);
@@ -162,7 +194,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                         <p className='text-sm text-secondary'>Please verify your details before confirming your reservation.</p>
                     </div>
 
-                    <div className='grid grid-cols-1 md:grid-cols-2 md:gap-2 md:px-5 mt-6'>
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-10 mt-6'>
                         <div>
                             {/* Court */}
                             <div className='flex space-x-3 mb-8 max-md:w-full w-xs mx-auto'>
@@ -205,57 +237,66 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                                     <p className='text-xs text-secondary'>{formData.contactPersonInfo.phoneNumber} • {formData.contactPersonInfo.email}</p>
                                 </div>
                             </div>
+                            <hr className="block md:hidden flex-1 text-secondary/40 mb-5" />
                         </div>
 
-                        <div className='mt-2 relative'>
-                            <p className='uppercase text-[10px] text-secondary font-semibold'>Payment info</p>
-
+                        <div className='lg:col-span-2 mt-2 relative'>
                             {/* Rate breakdown */}
-                            <div className='min-md:mx-5 max-sm:w-full max-md:w-md w-70 pb-5 mb-5 border-b border-secondary/20'>
-                                {Object.entries(rateGroups).map(([label, { rate, count }]) => (
-                                    <div key={label} className="flex justify-between items-center mt-2">
-                                        <p className='text-xs text-secondary'>{count}x {label} Rate</p>
-                                        <p className='text-xs text-secondary'>₱{(rate * count).toLocaleString()}</p>
-                                    </div>
-                                ))}
-                                <div className="flex justify-between items-center mt-1">
-                                    <p className='text-xs text-secondary'>Duration</p>
-                                    <p className='text-xs text-secondary'>{times?.length ?? 0} Hr{times?.length !== 1 ? 's' : ''}.</p>
-                                </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <p className='text-md font-semibold'>Total Amount</p>
-                                    <p className='text-md text-primary font-semibold'>₱{totalAmount.toLocaleString()}</p>
-                                </div>
-                            </div>
-
-                            {/* Payment method */}
-                            <p className='uppercase text-[10px] text-secondary font-semibold'>Payment method</p>
-                            <div className="space-y-3">
-                                {paymentOptions.map((option) => {
-                                    const isSelected = selectedPayment === option.id;
-                                    return (
-                                        <div
-                                            key={option.id}
-                                            onClick={() => setSelectedPayment(option.id)}
-                                            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all
-                                                ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 bg-white"}`}
-                                        >
-                                            <div className="flex items-center space-x-3">
-                                                <div className={`p-2 rounded-full ${isSelected ? "bg-primary/20 text-primary" : "bg-gray-100 text-gray-400"}`}>
-                                                    {option.icon}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-sm text-black/80">{option.label}</p>
-                                                    <p className="text-xs text-secondary">{option.description}</p>
-                                                </div>
-                                            </div>
-                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center
-                                                ${isSelected ? "border-primary" : "border-gray-300"}`}>
-                                                {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                                            </div>
+                            <div>
+                                <p className='uppercase text-[10px] text-secondary font-semibold mb-2'>Payment info</p>
+                                <div className='lg:max-w-120 mx-auto px-3'>
+                                    {Object.entries(rateGroups).map(([label, { rate, count }]) => (
+                                        <div key={label} className="flex justify-between items-center mt-2">
+                                            <p className='text-xs text-secondary'>{count}x {label} Rate</p>
+                                            <p className='text-xs text-secondary'>₱{(rate * count).toLocaleString()}</p>
                                         </div>
-                                    );
-                                })}
+                                    ))}
+                                    <div className="flex justify-between items-center mt-1">
+                                        <p className='text-xs text-secondary'>Duration</p>
+                                        <p className='text-xs text-secondary'>{times?.length ?? 0} Hr{times?.length !== 1 ? 's' : ''}.</p>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                        <p className='text-md font-semibold'>Total Amount</p>
+                                        <p className='text-md text-primary font-semibold'>₱{totalAmount.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                                <hr className="flex-1 text-secondary/40 my-5" />
+                            </div>
+                            {/* Payment method */}
+                            <div>
+                                <p className='uppercase text-[10px] text-secondary font-semibold mb-2'>Payment method</p>
+                                <div className='max-h-[200px] overflow-y-auto min-h-0'>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {allPaymentOptions.map((option) => {
+                                            const isSelected = selectedPayment === option.id;
+                                            return (
+                                                <div
+                                                    key={option.id}
+                                                    onClick={() => setSelectedPayment(option.id)}
+                                                    className={` p-4 rounded-xl border-2 cursor-pointer transition-all
+                                                        ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 bg-white"}`}
+                                                >
+                                                    <div className='flex items-center justify-between'>
+                                                        <div className="flex items-center space-x-3">
+                                                            <div className={`p-1 rounded-full ${isSelected ? "bg-primary/20 text-primary" : "bg-gray-100 text-gray-400"}`}>
+                                                                {option.icon}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-sm text-black/80">{option.label}</p>
+                                                                <p className="block md:hidden lg:block text-[11px] text-secondary">{option.description}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center
+                                                            ${isSelected ? "border-primary" : "border-gray-300"}`}>
+                                                            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                                                        </div>
+                                                    </div>
+                                                    <p className="hidden md:block lg:hidden text-[11px] text-secondary mt-2 ml-3">{option.description}</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Conflict slots error */}
@@ -289,6 +330,14 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
             ) : (
                 // Pay at Court success screen
                 <BookingConfirmation bookingId={isConfirmBooking.bookingID} onReset={handleResetFormNow} />
+            )}
+
+            {showEWallet && eWalletBooking && (
+                <GCashPayment
+                    booking={eWalletBooking}
+                    onClose={handleCloseGcash}
+                    onPaymentSuccess={handleEWalletManualConfirmation}
+                />
             )}
 
             {showQR && qrBooking && (

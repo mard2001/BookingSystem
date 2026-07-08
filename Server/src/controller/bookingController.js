@@ -422,7 +422,7 @@ export const confirmBooking = async (req, res) => {
             generateBookingID(bookingDate, (err, id) => err ? reject(err) : resolve(id));
         });
 
-        const bookingInitialStatus = paymentMethod == "online" ? "pending" : "confirmed";
+        const bookingInitialStatus = paymentMethod == "court" ? "confirmed" : "pending";
 
         // insert booking header
         await query(`
@@ -587,6 +587,50 @@ export const cancelBooking = async (req, res) => {
         return response.serverError(res, 'Cancellation error', err);
     }
 };
+
+export const cancelBookingViaEWallet = async (req, res) => {
+    if (!req.params.bookingID ) return response.badRequest(res, "Booking ID is required.");
+    const { bookingID } = req.params;
+
+    try {
+        const updatequery = `
+            UPDATE tbl_bookings 
+            SET status = 'cancelled', updatedAt = ?
+            WHERE bookingID = ?
+        `;
+
+        db.query(updatequery, [getCurrentTimestamp(), bookingID], (err, result) => {
+            if (err) return response.serverError(res, "Database error.", err);
+            if (result.affectedRows === 0) return response.notFound(res, "Booking not found.");
+
+            return response.ok(res, "Booking cancelled successfully.", result);
+        });
+    } catch (error) {
+        return response.serverError(res, 'Cancellation error', err);
+    }
+}
+
+export const confirmBookingViaEWallet = async (req, res) => {
+    if (!req.params.bookingID ) return response.badRequest(res, "Booking ID is required.");
+    const { bookingID } = req.params;
+
+    try {
+        const updatequery = `
+            UPDATE tbl_bookings 
+            SET status = 'confirmed', updatedAt = ?
+            WHERE bookingID = ?
+        `;
+
+        db.query(updatequery, [getCurrentTimestamp(), bookingID], (err, result) => {
+            if (err) return response.serverError(res, "Database error.", err);
+            if (result.affectedRows === 0) return response.notFound(res, "Booking not found.");
+
+            return response.ok(res, "Booking confirmed successfully.", result);
+        });
+    } catch (error) {
+        return response.serverError(res, 'Confirmation error', err);
+    }
+}
 
 const checkDatesAvailability = async (conn, courtID, dates, slots) => {
     const unavailable = [];

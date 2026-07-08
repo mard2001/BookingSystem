@@ -1,4 +1,4 @@
-import { Banknote, CalendarCheck2, Cctv, Clock2Icon, CreditCard, Lightbulb, MapPin, Pyramid, ShieldCheckIcon, Trophy, Users2 } from "lucide-react";
+import { Banknote, CalendarCheck2, Cctv, Clock2Icon, CreditCard, Lightbulb, MapPin, Pyramid, ShieldCheckIcon, Trophy, Users2, Wallet } from "lucide-react";
 
 export const HeroCardsQualities = [
     {
@@ -55,17 +55,16 @@ export const paymentOptions = [
     {
         id: "online",
         icon: <CreditCard className="w-5 h-5" />,
-        label: "Pay Online",
-        description: "Instant confirmation & secure checkout",
+        label: "InstaPay",
+        description: "Instant confirmation & secure checkout.",
     },
     {
         id: "court",
         icon: <Banknote className="w-5 h-5" />,
         label: "Pay at Court",
-        description: "Pay upon arrival at the facility",
+        description: "Pay upon arrival at the court.",
     },
 ];
- 
 
 export const ALLOWED_ROLES = ["admin","superadmin"]; 
 export const ADMIN_ROLES = ["admin", "superadmin"];
@@ -79,5 +78,47 @@ export const BUSINESS_INFO = {
     address: "Sto. Nino Ylaya, Talamban, Cebu City",
     longlat: { lat: 10.373536281736298, lng: 123.92269220472345 },
     email: "info@ylayasmashrally.com",
-    phone: "+09063220193",
+    phone: "09063220193",
+    bankaccounts: [
+        {
+            accountProviderLogo: "GCash_Logo.png",
+            accountProviderDisplayName: "GCash",
+            accountProvider: "gcash",
+            accountName: "Marvin Navarro", 
+            accountQR: "GCash_QR.jpg",
+            accountNumber: "09063220193",
+            description: "Direct Gcash payment."
+        },
+        {
+            accountProviderLogo: "PayMaya_Logo.png",
+            accountProviderDisplayName: "PayMaya",
+            accountProvider: "paymaya",
+            accountName: "Marvin Navarro", 
+            accountQR: "PayMaya_QR.jpg",
+            accountNumber: "09063220193",
+            description: "Direct Paymaya payment."
+        },
+        {
+            accountProviderLogo: "BPI_Logo.png",
+            accountProviderDisplayName: "BPI",
+            accountProvider: "bpi",
+            accountName: "Marvin Navarro", 
+            accountQR: "BPI_QR.jpg",
+            accountNumber: "9939126683",
+            description: "Direct BPI Payment."
+        },
+    ]
 };
+
+export const allPaymentOptions = [
+    ...paymentOptions,
+    ...BUSINESS_INFO.bankaccounts.map((account) => ({
+        id: account.accountProvider.toLowerCase(),
+        icon: <Wallet className="w-5 h-5" />,
+        label: account.accountProviderDisplayName,
+        description: account.description,
+        accountName: account.accountName,
+        accountNumber: account.accountNumber,
+        accountQR: account.accountQR,
+    })),
+];

@@ -1,4 +1,4 @@
-import { CheckCircle, ChevronLeft, ChevronRightIcon } from 'lucide-react'
+import { ArrowBigRight, ArrowRight, CheckCircle, ChevronLeft, ChevronRightIcon } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 import { useAppointmentFormContext } from '../../context/AppointmentFormContext'
 import { ServiceFormContent } from './ServiceFormContent'
@@ -136,7 +136,11 @@ export const MultiStepForm = ({ onSuccess }) => {
                                 ? 'Confirming booking...'
                                 : isConfirmed
                                     ? 'Booking Confirmed'
-                                    : 'Check Availability & Submit'
+                                    : (
+                                            <>
+                                                Confirm Booking & Submit <ArrowRight className="w-8 h-5" />
+                                            </>
+                                        )
                         }
                     </button>
                 ) : (

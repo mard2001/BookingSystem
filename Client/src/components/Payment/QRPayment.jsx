@@ -2,10 +2,10 @@ import { useCallback, useEffect } from 'react';
 import { usePayment } from '../../hooks/usePayment';
 import { CircleCheck, ClockAlertIcon, QrCodeIcon, RefreshCcw, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { addOneHour, formatSlotTime } from '../../utils/ValueFormat';
+import { addOneHour, formatReadableDate, formatSlotTime } from '../../utils/ValueFormat';
 
 export default function QRPayment({ booking, onClose, onPaymentSuccess, onIntentCreated }) {
-    console.log("booking", booking)
+    // console.log("booking", booking)
 
     const handlePaymentSuccess = useCallback(() => {
         onPaymentSuccess?.();
@@ -61,7 +61,7 @@ export default function QRPayment({ booking, onClose, onPaymentSuccess, onIntent
                 {/* Close button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors hover:cursor-pointer"
                 >
                     <X size={20} />
                 </button>
@@ -89,6 +89,10 @@ export default function QRPayment({ booking, onClose, onPaymentSuccess, onIntent
                     </div>
                     <div className="flex justify-between text-gray-500 mt-1">
                         <span>Booking Date:</span>
+                        <span className="font-medium text-xs text-gray-700">{formatReadableDate(booking.bookingDetails.dateTimeInfo.date)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 mt-1">
+                        <span>Booking Slot:</span>
                         <span className="font-medium text-xs text-gray-700">{formattedTimes()} ({totalHourDuration()})</span>
                     </div>
                     <div className="flex justify-between text-gray-500 mt-1">

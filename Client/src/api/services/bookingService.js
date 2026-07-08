@@ -117,7 +117,6 @@ export const updateBookingStatus = async(status, bookingID) => {
     } catch (error) {
         throw error;
     }
-
 }
 
 export const updateBookingDetails = async(bookingDetails, bookingID) => {
@@ -143,6 +142,25 @@ export const cancelBookingInitiation = async(bookingID, paymentIntentID) => {
         throw error;
     }
 }
+
+export const cancelBookingInitiationViaEwallet = async(bookingID) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/cancel-ewallet-booking/${bookingID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const confirmBookingViaEwallet = async(bookingID) => {
+    try {
+        const response = await api.put(`/api/v1/bookings/confirmbooking-viaewallet/${bookingID}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 
 export const getRegularBookings = async () => {
     try {

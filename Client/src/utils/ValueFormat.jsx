@@ -1,3 +1,16 @@
+// Fri Jul 24 2026 00:00:00 GMT+0800 (Singapore Standard Time)
+// Friday, July 24, 2026
+export function formatReadableDate2(dateInput) {
+    const date = new Date(dateInput);
+    return date.toLocaleDateString("en-PH", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "Asia/Manila"
+    });
+}
+
 // "2025-05-20T08:00:00.000Z"
 // "May 20, 2025"
 export const formatReadableDate = (date) => {
