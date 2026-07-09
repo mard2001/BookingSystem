@@ -304,7 +304,7 @@ export const BookingsPage = () => {
   return (
     <>
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
           <div>
             <p className="text-2xl sm:text-3xl font-bold text-primary">All Bookings</p>
             <p className="text-sm text-secondary">Manage and monitor all court reservations</p>

@@ -392,10 +392,10 @@ export const RegularReservationPage = () => {
     return (
         <>
             <div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                     <div>
-                    <p className="text-2xl sm:text-3xl font-bold text-primary">Scheduled Reservations</p>
-                    <p className="text-sm text-secondary">Manage recurring court bookings and regular player reservations.</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-primary">Scheduled Reservations</p>
+                        <p className="text-sm text-secondary">Manage recurring court bookings and regular player reservations.</p>
                     </div>
                     <button onClick={() => {setFieldErrors({}); setAddModalOpen(true); resetNewBookingTimeSlots()}}
                         className="flex items-center justify-center w-full sm:w-auto px-6 sm:px-10 py-2 text-xs bg-tertiary text-white rounded-lg hover:bg-primary/90 hover:cursor-pointer">
@@ -403,7 +403,7 @@ export const RegularReservationPage = () => {
                     </button>
                 </div>
 
-                <div className='my-10'>
+                <div className='mb-10'>
                     <DataTable
                         data={data}
                         columns={columns}

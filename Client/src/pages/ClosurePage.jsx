@@ -244,7 +244,7 @@ export const ClosurePage = () => {
     return (
         <>
             <div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                     <div>
                         <p className="text-2xl sm:text-3xl font-bold text-primary">Court Closures & Holidays</p>
                         <p className="text-sm text-secondary">Manage blackout dates and scheduled maintenance periods.</p>
@@ -256,7 +256,7 @@ export const ClosurePage = () => {
                 </div>
             </div>
 
-            <div className='pt-5'>
+            <div className=''>
                 <Tabs tabs={tabs} defaultTab="tab1" />
             </div>
 

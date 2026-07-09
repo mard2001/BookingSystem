@@ -4,37 +4,37 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #F8F1F3;      /* Soft rose white */
-  --color-foreground: #FDF9FA;      /* Off-white */
+  --color-background: #F8F1F3;       
+  --color-foreground: #FDF9FA;       
 
-  --color-card: #FFFFFF;
-  --color-surface: #9AB3C4;         /* Muted rose */
+  --color-card: #F8F9FA;
+  --color-surface: #9AB3C4;         
 
-  --color-primary-brighter: #A43D52;   /* Bright maroon */
-  --color-primary: #690000;            /* Main maroon */
-  --color-primary-foreground: #FFFFFF;
-  --color-primary-darker: #3B0000;     /* Deep burgundy */
-  --color-primary-lightdark: #8B1E3F;  /* Wine */
-  --color-primary-lighter: #E8C6CF;    /* Light blush */
+  --color-primary-brighter: #A43D52;   
+  --color-primary: #690000;             
+  --color-primary-foreground: #F8F9FA;
+  --color-primary-darker: #3B0000;    
+  --color-primary-lightdark: #8B1E3F;   
+  --color-primary-lighter: #E8C6CF;    
 
-  --color-secondary-brighter: #8A9BA3; /* Dusty rose */
-  --color-secondary: #697c83;          /* Muted maroon */
-  --color-secondary-foreground: #FFFFFF;
+  --color-secondary-brighter: #8A9BA3;  
+  --color-secondary: #697c83;           
+  --color-secondary-foreground: #F8F9FA;
 
   --color-tertiary: #1d293d;  
 
-  --color-muted: #6B4A53;              /* Muted wine */
-  --color-muted-foreground: #B99AA3;   /* Soft rose gray */
+  --color-muted: #6B4A53;              
+  --color-muted-foreground: #B99AA3;    
 
-  --color-border: #8A5A67;             /* Rose border */
+  --color-border: #8A5A67;              
 
-  --color-highlight: #8B1538;          /* Accent crimson */
+  --color-highlight: #8B1538;           
   --radius: 0.75rem;
 }
 
 @layer base{
   *{
-    font-family: "Lexend", sans-serif;
+    font-family: "Manrope", sans-serif;
     font-optical-sizing: auto;
     font-style: normal;
     scrollbar-width: thin;

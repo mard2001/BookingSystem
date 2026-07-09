@@ -166,7 +166,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
 
     const handleGcashExpired = (booking) => {
         handleCloseEWallet();  
-        toast.error(`Payment window expired for booking ${booking.bookingID}`);
+        toast.error(`Payment window expired for booking ${booking.bookingID}. Try booking again...`);
     };
 
     const handleEWalletManualConfirmation = () => {

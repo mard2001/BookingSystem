@@ -9,13 +9,13 @@ export const BookingsCalendarPage = () => {
     return (
         <>
             <div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                     <div>
                         <p className="text-2xl sm:text-3xl font-bold text-primary">Reservation Calendar</p>
                         <p className="text-sm text-secondary">Manage court schedules and bookings</p>
                     </div>
                 </div>
-                <div className='bg-white/70 rounded-xl overflow-hidden mt-10 shadow-xl'>
+                <div className='bg-white/70 rounded-xl overflow-hidden shadow-xl'>
                     <CalendarBookingApp />
                 </div>
             </div>

@@ -39,7 +39,7 @@ export const DataTable = ({ data = [], columns = [], loading = false, error = nu
         table.getFilteredRowModel().rows.map(row => row.original);
 
     return (
-        <div className="space-y-4 bg-background py-5 rounded-2xl shadow-lg">
+        <div className="space-y-4 bg-card py-5 rounded-2xl shadow-lg">
 
             {/* Search */}
             <div className="flex items-center justify-between mx-5">

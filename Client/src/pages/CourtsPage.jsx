@@ -3,7 +3,7 @@ import { DataTable } from "../components/DataTable";
 import { addCourt, deleteCourt, getCountAvailableCourts, getCountMaintenanceCourts, getCountTotalCourts, getCountUnavailableCourts, getCourts, updateCourt } from "../api/services/courtService";
 import { CalendarX, CheckCircle2, EditIcon, PlusCircle, Ratio, Trash2Icon, Wrench } from "lucide-react";
 import { getExportFilename } from "../utils/ExportTable";
-import { StatsGrid } from "../components/StatsGrid";
+import { StatsGrid3 } from "../components/StatsGrid3";
 import { Modal } from "../components/Modal";
 import { toast } from "sonner";
 import { validateForm } from "../utils/ValueValidate";
@@ -248,16 +248,16 @@ export const CourtsPage = () => {
   ], [handleEdit, handleDelete]);
 
   const stats = useMemo(() => [
-    { icon: Ratio, iconColor: "text-primary", label: "Total Courts", value: data.length },
-    { icon: CheckCircle2, iconColor: "text-[#00FF00]", label: "Available Courts", value: data.filter(c => c.isActive === 1).length },
-    { icon: CalendarX, iconColor: "text-[#FF0000]", label: "Unavailable Courts", value: data.filter(c => c.isActive === 2).length },
-    { icon: Wrench, iconColor: "text-[#FFA500]", label: "Under Maintenance", value: data.filter(c => c.isActive === 0).length },
+    { icon: Ratio, iconColor: "text-primary", gradient: "from-primary/20 to-primary/10", label: "Total Courts", value: data.length },
+    { icon: CheckCircle2, iconColor: "text-[#00FF00]", gradient: "from-[#00FF00]/20 to-[#00FF00]/10", label: "Available Courts", value: data.filter(c => c.isActive === 1).length },
+    { icon: CalendarX, iconColor: "text-[#FF0000]", gradient: "from-[#FF0000]/20 to-[#FF0000]/10", label: "Unavailable Courts", value: data.filter(c => c.isActive === 2).length },
+    { icon: Wrench, iconColor: "text-[#FFA500]", gradient: "from-[#FFA500]/20 to-[#FFA500]/10", label: "Under Maintenance", value: data.filter(c => c.isActive === 0).length },
   ], [data]);
 
   return (
     <>
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
           <div>
             <p className="text-2xl sm:text-3xl font-bold text-primary">Courts</p>
             <p className="text-sm text-secondary">Manage all facilities, types, and dynamic pricing rules</p>
@@ -268,7 +268,7 @@ export const CourtsPage = () => {
           </button>
         </div>
 
-        <StatsGrid items={stats} maxCols={4} />
+        <StatsGrid3 items={stats} maxCols={4} />
         
         <DataTable
           data={data}
