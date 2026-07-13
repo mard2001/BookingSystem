@@ -1,4 +1,4 @@
-import { db } from '../connect.js';
+import { db, getPromiseConnection } from '../connect.js';
 import { getCurrentTimestamp } from '../utils/calculateValues.js';
 import { generateBookingID } from '../utils/codeGenerator.js';
 import * as response from '../utils/response.js';
@@ -94,23 +94,21 @@ const insertDefaultTimeSlots = (courtID, callback) => {
     });
 };
 
-const insertTimeSlots = (courtID, startHour, endHour, callback) => {
-    // endHour is exclusive of the last slot's END time —
-    // e.g. startHour=8, endHour=22 generates slots from 08:00 up to 21:00 (last booking ends at 22:00)
+const insertTimeSlots = (conn, courtID, startTime, endTime) => {
+    const startHour = parseInt(startTime.split(':')[0], 10);
+    const endHour = parseInt(endTime.split(':')[0], 10);
+
+    if (isNaN(startHour) || isNaN(endHour) || startHour >= endHour) {
+        return Promise.reject(new Error('Invalid operating hours: startTime must be before endTime.'));
+    }
+
     const slotValues = [];
     for (let hour = startHour; hour < endHour; hour++) {
         const slotTime = `${String(hour).padStart(2, '0')}:00:00`;
         slotValues.push([courtID, slotTime, 1, getCurrentTimestamp(), getCurrentTimestamp()]);
     }
 
-    if (slotValues.length === 0) {
-        return callback(new Error('Invalid operating hours: no slots generated.'));
-    }
-
-    db.query(`INSERT INTO tbl_time_slots (courtID, slotTime, isActive, updatedAt, createdAt) VALUES ?`, [slotValues], (err, result) => {
-        if (err) return callback(err);
-        callback(null, result);
-    });
+    return conn.query(`INSERT INTO tbl_time_slots (courtID, slotTime, isActive, updatedAt, createdAt) VALUES ?`, [slotValues]);
 };
 
 export const externalInsertDefaultTimeSlots = (req, res) => {
@@ -135,33 +133,38 @@ export const externalInsertDefaultTimeSlots = (req, res) => {
     });
 };
 
-export const createNewCourt = (req, res) => {
+export const createNewCourt = async (req, res) => {
     if (!validateFields(req, res, [
         'courtLabel', 'courtSport', 'courtType', 'courtDesc', 'isActive', 'rate1', 'rate2', 'rate3', 'rate4', 'startTime', 'endTime'
     ])) return;
     
     const { courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, startTime, endTime } = req.body;
 
-    const query = `
-        INSERT INTO tbl_courts (courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, updatedAt, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    let conn;
+    try {
+        conn = await getPromiseConnection();
+        await conn.beginTransaction();
 
-    const values = [courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, getCurrentTimestamp(), getCurrentTimestamp()];
+        const [result] = await conn.query(
+            `INSERT INTO tbl_courts (courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, updatedAt, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, getCurrentTimestamp(), getCurrentTimestamp()]
+        );
 
-    db.query(query, values, (err, result) => {
-        if (err) return response.serverError(res, 'Database error', err);
-        if (result.length > 0) return response.conflict(res, 'Insertion of court failed');
-        
-        insertTimeSlots(result.insertId, startTime, endTime, (err) => {
-            if (err) return response.serverError(res, 'Court created but failed to add time slots', err);
+        await insertTimeSlots(conn, result.insertId, startTime, endTime);
 
-            return response.ok(res, "Court created successfully.", {
-                courtID: result.insertId,
-                ...req.body
-            });
+        await conn.commit();
+
+        return response.ok(res, "Court created successfully.", {
+            courtID: result.insertId,
+            ...req.body
         });
-    });
+    } catch (err) {
+        if (conn) await conn.rollback();
+        return response.serverError(res, 'Failed to create court', err);
+    } finally {
+        if (conn) conn.release();
+    }
 };
 
 export const updateCourt = (req, res) => {
