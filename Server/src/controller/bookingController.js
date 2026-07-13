@@ -8,6 +8,7 @@ import { validateFields, validateTransition } from '../utils/validateFields.js';
 
 
 export const getAvailableSlots = (req, res) => {
+    // return response.ok(res, 'Slots fetched successfully', req.params);
     const { courtID } = req.params;
     const { date } = req.query;
 
@@ -611,26 +612,39 @@ export const cancelBookingViaEWallet = async (req, res) => {
 }
 
 export const confirmBookingViaEWallet = async (req, res) => {
-    if (!req.params.bookingID ) return response.badRequest(res, "Booking ID is required.");
+    if (!req.params.bookingID) return response.badRequest(res, "Booking ID is required.");
     const { bookingID } = req.params;
 
+    let conn;
     try {
-        const updatequery = `
-            UPDATE tbl_bookings 
-            SET status = 'confirmed', updatedAt = ?
-            WHERE bookingID = ?
-        `;
+        conn = await getPromiseConnection();
+        await conn.beginTransaction();
 
-        db.query(updatequery, [getCurrentTimestamp(), bookingID], (err, result) => {
-            if (err) return response.serverError(res, "Database error.", err);
-            if (result.affectedRows === 0) return response.notFound(res, "Booking not found.");
+        const [bookingResult] = await conn.query(
+            `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+            [getCurrentTimestamp(), bookingID]
+        );
 
-            return response.ok(res, "Booking confirmed successfully.", result);
-        });
-    } catch (error) {
-        return response.serverError(res, 'Confirmation error', err);
+        if (bookingResult.affectedRows === 0) {
+            await conn.rollback();
+            return response.notFound(res, "Booking not found.");
+        }
+
+        await conn.query(
+            `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+            [getCurrentTimestamp(), bookingID]
+        );
+
+        await conn.commit();
+        return response.ok(res, "Booking confirmed successfully.", bookingResult);
+
+    } catch (err) {
+        if (conn) await conn.rollback();
+        return response.serverError(res, "Confirmation error", err);
+    } finally {
+        if (conn) conn.release();
     }
-}
+};
 
 const checkDatesAvailability = async (conn, courtID, dates, slots) => {
     const unavailable = [];
