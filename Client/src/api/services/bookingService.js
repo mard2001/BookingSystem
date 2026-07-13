@@ -68,7 +68,7 @@ export const confirmBooking = async (courtID, bookingDetails, bookingDate, slotT
             bookerContactNumber: bookingDetails.contactPersonInfo.phoneNumber,      
             slotTimes,          
             paymentMethod, 
-            userID    
+            userID: bookingDetails.contactPersonInfo.id,
         });
 
         return response;

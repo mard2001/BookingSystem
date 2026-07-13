@@ -44,6 +44,9 @@ export const ContactInfoContent = () => {
         if (user.contactNumber)
             updateContactInfoSelected("phoneNumber", user.contactNumber);
 
+        if (user.id)
+            updateContactInfoSelected("id", user.id);
+
     }, []); 
 
     return (

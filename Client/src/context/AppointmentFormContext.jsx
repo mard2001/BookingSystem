@@ -16,6 +16,7 @@ export const AppointmentFormProvider = ({ children }) => {
             time: [],
         },
         contactPersonInfo: {
+            id: "-1",
             fullname:"",
             email:"",
             phoneNumber:""
