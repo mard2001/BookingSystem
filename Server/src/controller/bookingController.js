@@ -353,12 +353,11 @@ export const getHistoricalBookings = (req, res) => {
 }
 
 export const confirmBooking = async (req, res) => {
+    if (!validateFields(req, res, [
+        'courtID', 'bookingDate', 'bookerFullName', 'bookerEmail', 'bookerContactNumber', 'slotTimes', 'paymentMethod', 'userID'
+    ])) return;
+
     const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod, userID } = req.body;
-    
-
-    if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod || !userID)
-        return response.badRequest(res, 'Missing required fields');
-
     const parsedUserID = parseInt(req.body.userID, 10);
     const accountID = Number.isNaN(parsedUserID) ? -1 : parsedUserID;
 
