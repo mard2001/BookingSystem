@@ -103,7 +103,7 @@ export const MultiStepForm = ({ onSuccess }) => {
 
             {/* Form Content */}
             <div className="bg-card backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200/50 p-10 mb-10">
-                <div className="min-h-[600]">{renderStepContent()}</div>
+                <div className="">{renderStepContent()}</div>
             </div>
 
             {/* Navigation Buttons */}
