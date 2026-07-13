@@ -353,11 +353,14 @@ export const getHistoricalBookings = (req, res) => {
 }
 
 export const confirmBooking = async (req, res) => {
-    const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod } = req.body;
-    const accountID = req.body.userID ? Number(req.body.userID) : -1;
+    const { courtID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber, slotTimes, paymentMethod, userID } = req.body;
+    
 
-    if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod)
+    if (!courtID || !bookingDate || !slotTimes?.length || !paymentMethod || !userID)
         return response.badRequest(res, 'Missing required fields');
+
+    const parsedUserID = parseInt(req.body.userID, 10);
+    const accountID = Number.isNaN(parsedUserID) ? -1 : parsedUserID;
 
     const conn = await getConnection();
 
