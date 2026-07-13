@@ -73,6 +73,7 @@ export const DateTimeContent = () => {
                 const res = await fetchAvailableSlots(courtID, selectedDate);
                 const formatted = res.data.map(slot => ({
                     time: formatSlotTime(slot.slotTime),  
+                    // time: `${formatSlotTime(slot.slotTime)} - ${formatSlotTime(addOneHour(slot.slotTime))}`,  
                     value: slot.slotTime,                 
                     available: slot.isAvailable === 1,
                     reason: slot.unavailableReason

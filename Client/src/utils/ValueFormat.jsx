@@ -61,8 +61,9 @@ export const getDayType = (date) => {
 // "14:30"
 // "PM"
 export const getTimeType = (slotTime, dayType) => {
-    const hour = parseInt(slotTime.split(':')[0]);
     const pmStart = dayType === 'weekend' ? WEEKEND_PM_START : WEEKDAY_PM_START;
+    if (pmStart == null) return 'AM'; // if no PM split — always use the AM rate key
+    const hour = parseInt(slotTime.split(':')[0]);
     return hour < pmStart ? 'AM' : 'PM';
 };
 
