@@ -154,7 +154,7 @@ export const cancelBookingInitiationViaEwallet = async(bookingID) => {
 
 export const confirmBookingViaEwallet = async(bookingID) => {
     try {
-        const response = await api.put(`/api/v1/bookings/confirmbooking-viaewallet/${bookingID}`);
+        const response = await api.post(`/api/v1/bookings/confirmbooking-viaewallet/${bookingID}`);
         return response;
     } catch (error) {
         throw error;

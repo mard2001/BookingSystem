@@ -502,7 +502,7 @@ export const CourtsPage = () => {
               {isEditing ? "Update the details for this court." : "Check court specifications, rates, and availability"}
             </p>
 
-            <hr className='max-md mb-10 text-secondary/30'/>
+            <hr className='max-md mb-5 text-secondary/30'/>
             <div className="space-y-5">
               <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BookOpenTextIcon className="w-5 h-5 text-primary" /> Basic Court Information</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
