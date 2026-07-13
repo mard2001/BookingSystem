@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { DataTable } from "../components/DataTable";
 import { addCourt, deleteCourt, getCountAvailableCourts, getCountMaintenanceCourts, getCountTotalCourts, getCountUnavailableCourts, getCourts, updateCourt } from "../api/services/courtService";
-import { CalendarX, CheckCircle2, EditIcon, PlusCircle, Ratio, Trash2Icon, Wrench } from "lucide-react";
+import { BanknoteArrowDownIcon, BookOpenTextIcon, CalendarX, CheckCircle2, Clock, EditIcon, InfoIcon, PlusCircle, Ratio, Trash2Icon, Wrench } from "lucide-react";
 import { getExportFilename } from "../utils/ExportTable";
 import { StatsGrid3 } from "../components/StatsGrid3";
 import { Modal } from "../components/Modal";
 import { toast } from "sonner";
 import { validateForm } from "../utils/ValueValidate";
 import { addCourtRules } from "../Rules/CourtInputRules";
+import { WEEKDAY_PM_START, WEEKEND_PM_START } from "../constants/contants";
+import { formatHour } from "../utils/ValueFormat";
 
 export const CourtsPage = () => {
   const [data, setData] = useState([]);
@@ -21,7 +23,7 @@ export const CourtsPage = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newCourt, setNewCourt] = useState({
-    courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "",
+    courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime:"", endTime:""
   });
   const [editForm, setEditForm] = useState({
     courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "",
@@ -91,6 +93,7 @@ export const CourtsPage = () => {
 
   const confirmDelete = async () => {
     try {
+      console.log(courtToDelete.courtID)
       const data = await deleteCourt(courtToDelete.courtID);
       setData(prev => prev.filter(c => c.courtID !== courtToDelete.courtID));
       setDeleteModalOpen(false);
@@ -115,11 +118,11 @@ export const CourtsPage = () => {
 
     try {
       const added = await addCourt(newCourt);
-      setData(prev => [...prev, added]);
+      setData(prev => [...prev, added.data]);
       setAddModalOpen(false);
       toast.success(added.message);
       setFieldErrors({});
-      setNewCourt({ courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "" }); // reset
+      setNewCourt({ courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime: "", endTime: "" }); // reset
     } catch (err) {
       toast.error(err.message);
       if (err.errors?.missing) {
@@ -288,9 +291,10 @@ export const CourtsPage = () => {
           <h2 className="text-xl font-bold text-primary mb-1">Add New Court</h2>
           <p className="text-sm text-secondary mb-6">Fill in the details to register a new court.</p>
 
-          <hr className='max-md mb-10 text-secondary/30'/>
+          <hr className='max-md mb-5 text-secondary/30'/>
           <div className="space-y-5">
             {/* Court Label & Sport */}
+            <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BookOpenTextIcon className="w-5 h-5 text-primary" /> Basic Court Information</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Label</label>
@@ -384,15 +388,56 @@ export const CourtsPage = () => {
               {fieldErrors.courtDesc && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtDesc} </span>)}
             </div>
 
+            {/* Operating Hours */}
+            <p className="text-xs font-bold flex items-center gap-1 mb-2"> <Clock className="w-5 h-5 text-primary" /> Operating Hours</p>
+            <div className="border-1 border-gray-200 p-3 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={newCourt.startTime}
+                    onChange={handleNewCourtChange}
+                    placeholder="e.g. Badminton"
+                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
+                      ${fieldErrors.startTime 
+                          ? "border-red-500 focus:ring-red-300" 
+                          : "border-gray-200 focus:ring-primary/30"
+                      }`}
+                  />
+                  {fieldErrors.startTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.startTime} </span>)}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">End Time</label>
+                  <input
+                    type="time"
+                    name="endTime"
+                    value={newCourt.endTime}
+                    onChange={handleNewCourtChange}
+                    placeholder="e.g. Badminton"
+                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
+                      ${fieldErrors.endTime 
+                          ? "border-red-500 focus:ring-red-300" 
+                          : "border-gray-200 focus:ring-primary/30"
+                      }`}
+                  />
+                  {fieldErrors.endTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.endTime} </span>)}
+                </div>
+              </div>
+              <span className="flex items-center text-[10px] text-secondary mt-1"><InfoIcon className="w-3 h-3 mr-1" /> These hours apply to all days of the week by default.</span>
+            </div>
+
             {/* Rates */}
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Pricing Rates</p>
+              <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BanknoteArrowDownIcon className="w-5 h-5 text-primary" /> Pricing Rates</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Weekday AM", key: "rate1" },
-                  { label: "Weekday PM", key: "rate2" },
-                  { label: "Weekend AM", key: "rate3" },
-                  { label: "Weekend PM", key: "rate4" },
+                  { label: `Weekday AM`, key: "rate1" },
+                  { label: `Weekday PM (from ${formatHour(WEEKDAY_PM_START)})`, key: "rate2" },
+                  { label: `Weekend AM`, key: "rate3" },
+                  { label: `Weekend PM (from ${formatHour(WEEKEND_PM_START)})`, key: "rate4" },
+                  
                 ].map(rate => (
                   <div key={rate.key}>
                     <label className="block text-xs text-gray-400 mb-1">{rate.label}</label>
@@ -459,6 +504,7 @@ export const CourtsPage = () => {
 
             <hr className='max-md mb-10 text-secondary/30'/>
             <div className="space-y-5">
+              <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BookOpenTextIcon className="w-5 h-5 text-primary" /> Basic Court Information</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Label</label>
@@ -524,8 +570,49 @@ export const CourtsPage = () => {
                   {isEditing && fieldErrors.courtDesc && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtDesc} </span>)}
               </div>
 
+              {/* Operating Hours */}
+              <p className="text-xs font-bold flex items-center gap-1 mb-2"> <Clock className="w-5 h-5 text-primary" /> Operating Hours</p>
+              <div className="border-1 border-gray-200 p-3 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={editForm.startTime}
+                      onChange={handleEditChange}
+                      readOnly={!isEditing} disabled={!isEditing}
+                      className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
+                        ${isEditing && fieldErrors.startTime 
+                            ? "border-red-500 focus:ring-red-300" 
+                            : "border-gray-200 focus:ring-primary/30"
+                        }`}
+                    />
+                    {isEditing && fieldErrors.startTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.startTime} </span>)}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">End Time</label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={editForm.endTime}
+                      onChange={handleEditChange}
+                      readOnly={!isEditing} disabled={!isEditing}
+                      className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
+                        ${isEditing && fieldErrors.endTime 
+                            ? "border-red-500 focus:ring-red-300" 
+                            : "border-gray-200 focus:ring-primary/30"
+                        }`}
+                    />
+                    {isEditing && fieldErrors.endTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.endTime} </span>)}
+                  </div>
+                </div>
+                <span className="flex items-center text-[10px] text-secondary mt-1"><InfoIcon className="w-3 h-3 mr-1" /> These hours apply to all days of the week by default.</span>
+              </div>
+
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Pricing Rates</p>
+                <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BanknoteArrowDownIcon className="w-5 h-5 text-primary" /> Pricing Rates</p>
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: "Weekday AM", key: "rate1" },

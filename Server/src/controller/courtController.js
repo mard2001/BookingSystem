@@ -94,6 +94,25 @@ const insertDefaultTimeSlots = (courtID, callback) => {
     });
 };
 
+const insertTimeSlots = (courtID, startHour, endHour, callback) => {
+    // endHour is exclusive of the last slot's END time —
+    // e.g. startHour=8, endHour=22 generates slots from 08:00 up to 21:00 (last booking ends at 22:00)
+    const slotValues = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+        const slotTime = `${String(hour).padStart(2, '0')}:00:00`;
+        slotValues.push([courtID, slotTime, 1, getCurrentTimestamp(), getCurrentTimestamp()]);
+    }
+
+    if (slotValues.length === 0) {
+        return callback(new Error('Invalid operating hours: no slots generated.'));
+    }
+
+    db.query(`INSERT INTO tbl_time_slots (courtID, slotTime, isActive, updatedAt, createdAt) VALUES ?`, [slotValues], (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+    });
+};
+
 export const externalInsertDefaultTimeSlots = (req, res) => {
     if (!req.params.courtID) return response.badRequest(res, "Court ID is required.");
     const { courtID } = req.params;
@@ -118,10 +137,10 @@ export const externalInsertDefaultTimeSlots = (req, res) => {
 
 export const createNewCourt = (req, res) => {
     if (!validateFields(req, res, [
-        'courtLabel', 'courtSport', 'courtType', 'courtDesc', 'isActive', 'rate1', 'rate2', 'rate3', 'rate4'
+        'courtLabel', 'courtSport', 'courtType', 'courtDesc', 'isActive', 'rate1', 'rate2', 'rate3', 'rate4', 'startTime', 'endTime'
     ])) return;
     
-    const { courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4 } = req.body;
+    const { courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, startTime, endTime } = req.body;
 
     const query = `
         INSERT INTO tbl_courts (courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, updatedAt, createdAt)
@@ -134,7 +153,7 @@ export const createNewCourt = (req, res) => {
         if (err) return response.serverError(res, 'Database error', err);
         if (result.length > 0) return response.conflict(res, 'Insertion of court failed');
         
-        insertDefaultTimeSlots(result.insertId, (err) => {
+        insertTimeSlots(result.insertId, startTime, endTime, (err) => {
             if (err) return response.serverError(res, 'Court created but failed to add time slots', err);
 
             return response.ok(res, "Court created successfully.", {

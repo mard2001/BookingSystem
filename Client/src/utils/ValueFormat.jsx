@@ -51,6 +51,12 @@ export const formatSlotTime = (slotTime) => {
     return `${String(displayHour).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${period}`;
 };
 
+export const formatHour = (hour) => {
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        return `${displayHour}${period}`;
+    };
+
 // "2025-05-20"
 // "weekday"
 export const getDayType = (date) => {

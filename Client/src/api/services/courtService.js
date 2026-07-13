@@ -68,7 +68,7 @@ export async function getCountMaintenanceCourts() {
 export async function addCourt(court) {
     try {
         const response = await api.post("/api/v1/courts/add/new", court);
-        return response.data;
+        return response;
     } catch (error) {
         console.error("Add court failed:", error);
         throw error;

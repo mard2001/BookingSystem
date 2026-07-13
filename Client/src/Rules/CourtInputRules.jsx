@@ -1,12 +1,14 @@
 export const addCourtRules = {
-    courtLabel: { required: true, }, 
-    courtSport: { required: true, }, 
+    courtLabel: { required: true, maxLength: 50 },
+    courtSport: { required: true, maxLength: 50 }, 
     courtType: { required: true, }, 
     courtDesc: { required: true, }, 
     rate1: { required: true, }, 
     rate2: { required: true, }, 
     rate3: { required: true, }, 
     rate4: { required: true, },
+    startTime: { required: true, },
+    endTime: { required: true, },
 }
 
 export const closureCreateRules = {

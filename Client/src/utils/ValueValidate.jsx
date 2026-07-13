@@ -13,6 +13,10 @@ export const validateForm = (form, rules) => {
             errors[field] = checks.minLengthMessage || `Minimum ${checks.minLength} characters.`;
         }
 
+        if (checks.maxLength && value?.length > checks.maxLength) {
+            errors[field] = checks.maxLengthMessage || `Maximum ${checks.maxLength} characters.`;
+        }
+
         if (checks.exactLength && value?.length !== checks.exactLength) {
             errors[field] = checks.exactLengthMessage || `Must be exactly ${checks.exactLength} characters.`;
         }
