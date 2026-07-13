@@ -167,7 +167,7 @@ export const createNewCourt = async (req, res) => {
     }
 };
 
-export const updateCourt = (req, res) => {
+export const updateCourt = async (req, res) => {
     if (!validateFields(req, res, [
         'courtLabel', 'courtSport', 'courtType', 'courtDesc', 'isActive', 'rate1', 'rate2', 'rate3', 'rate4'
     ])) return;
@@ -175,24 +175,86 @@ export const updateCourt = (req, res) => {
     if (!req.params.courtID) return response.badRequest(res, "Court ID is required.");
 
     const { courtID } = req.params;
-    const { courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4 } = req.body;
+    const { courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, startTime, endTime } = req.body;
 
-    const query = `
-        UPDATE tbl_courts 
-        SET courtLabel = ?, courtSport = ?, courtType = ?, courtDesc = ?, 
-            isActive = ?, rate1 = ?, rate2 = ?, rate3 = ?, rate4 = ?, updatedAt = ?
-        WHERE courtID = ?
-    `;
+    let conn;
+    try {
+        conn = await getPromiseConnection();
+        await conn.beginTransaction();
 
-    const values = [courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, getCurrentTimestamp(), courtID];
+        const [result] = await conn.query(
+            `UPDATE tbl_courts 
+             SET courtLabel = ?, courtSport = ?, courtType = ?, courtDesc = ?, 
+                 isActive = ?, rate1 = ?, rate2 = ?, rate3 = ?, rate4 = ?, updatedAt = ?
+             WHERE courtID = ?`,
+            [courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, getCurrentTimestamp(), courtID]
+        );
 
-    db.query(query, values, (err, result) => {
-        if (err) return response.serverError(res, "Database error.", err);
+        if (result.affectedRows === 0) {
+            await conn.rollback();
+            return response.notFound(res, "Court not found.");
+        }
 
-        if (result.affectedRows === 0) return response.notFound(res, "Court not found.");
+        if (startTime && endTime) {
+            await syncTimeSlots(conn, courtID, startTime, endTime);
+        }
 
+        await conn.commit();
         return response.ok(res, "Court updated successfully.", result);
-    });
+
+    } catch (err) {
+        if (conn) await conn.rollback();
+        return response.serverError(res, "Failed to update court.", err);
+    } finally {
+        if (conn) conn.release();
+    }
+};
+
+const syncTimeSlots = async (conn, courtID, startTime, endTime) => {
+    const startHour = parseInt(startTime.split(':')[0], 10);
+    const endHour = parseInt(endTime.split(':')[0], 10);
+
+    if (isNaN(startHour) || isNaN(endHour) || startHour >= endHour) {
+        throw new Error('Invalid operating hours: startTime must be before endTime.');
+    }
+
+    const newHours = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+        newHours.push(`${String(hour).padStart(2, '0')}:00:00`);
+    }
+
+    // Deactivate slots now outside the range (keeps booking history intact)
+    await conn.query(
+        `UPDATE tbl_time_slots SET isActive = 0, updatedAt = ? 
+         WHERE courtID = ? AND slotTime NOT IN (?)`,
+        [getCurrentTimestamp(), courtID, newHours]
+    );
+
+    // Find which hours already exist so we don't duplicate
+    const [existing] = await conn.query(
+        `SELECT slotTime FROM tbl_time_slots WHERE courtID = ? AND slotTime IN (?)`,
+        [courtID, newHours]
+    );
+    const existingSet = new Set(existing.map(row => row.slotTime));
+
+    // Reactivate ones already in DB
+    if (existing.length > 0) {
+        await conn.query(
+            `UPDATE tbl_time_slots SET isActive = 1, updatedAt = ? 
+             WHERE courtID = ? AND slotTime IN (?)`,
+            [getCurrentTimestamp(), courtID, [...existingSet]]
+        );
+    }
+
+    // Insert brand-new hours not seen before
+    const toInsert = newHours.filter(h => !existingSet.has(h));
+    if (toInsert.length > 0) {
+        const slotValues = toInsert.map(slotTime => [courtID, slotTime, 1, getCurrentTimestamp(), getCurrentTimestamp()]);
+        await conn.query(
+            `INSERT INTO tbl_time_slots (courtID, slotTime, isActive, updatedAt, createdAt) VALUES ?`,
+            [slotValues]
+        );
+    }
 };
 
 export const deleteCourt = (req, res) => {
