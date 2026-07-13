@@ -1,4 +1,7 @@
 // Fri Jul 24 2026 00:00:00 GMT+0800 (Singapore Standard Time)
+
+import { WEEKDAY_PM_START, WEEKEND_PM_START } from "../constants/contants";
+
 // Friday, July 24, 2026
 export function formatReadableDate2(dateInput) {
     const date = new Date(dateInput);
@@ -57,9 +60,10 @@ export const getDayType = (date) => {
 
 // "14:30"
 // "PM"
-export const getTimeType = (slotTime) => {
+export const getTimeType = (slotTime, dayType) => {
     const hour = parseInt(slotTime.split(':')[0]);
-    return hour < 12 ? 'AM' : 'PM';
+    const pmStart = dayType === 'weekend' ? WEEKEND_PM_START : WEEKDAY_PM_START;
+    return hour < pmStart ? 'AM' : 'PM';
 };
 
 // "weekday", "AM"

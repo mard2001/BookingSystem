@@ -106,17 +106,12 @@ export const ManualEWalletPayment = ({ booking, onClose, onPaymentSuccess, onExp
                     <div className="flex items-center justify-center gap-2 mb-1">
                         <img src={`images/${eWalletAccount.accountProviderLogo}`} alt="GCash" className="w-10" />
                         <h2 id="gcash-payment-title" className="text-lg font-semibold text-gray-800">
-                            Pay via <span className='capitalize'>{eWalletAccount.accountProvider}</span>
+                            Pay via <span className='capitalize'>{eWalletAccount.accountProviderDisplayName}</span>
                         </h2>
                     </div>
                     <p className="text-sm text-gray-500">
-                        Scan with your <span className='capitalize'>{eWalletAccount.accountProvider}</span> account
+                        Scan with your <span className='capitalize'>{eWalletAccount.accountProviderDisplayName}</span> account
                     </p>
-                    {booking?.amount && (
-                        <p className="text-2xl font-bold text-gray-900 mt-2">
-                            ₱{booking.amount.toLocaleString()}
-                        </p>
-                    )}
                 </div>
 
                 {/* Booking summary */}
@@ -140,7 +135,7 @@ export const ManualEWalletPayment = ({ booking, onClose, onPaymentSuccess, onExp
                     <div className="flex justify-between text-gray-500 mt-1">
                         <span>Amount:</span>
                         <span className="font-semibold text-gray-800">
-                            ₱{parseFloat(booking.bookingDetails.paymentInfo.totalAmount).toFixed(2)}
+                            ₱{parseFloat(booking.bookingDetails.paymentInfo.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                 </div>

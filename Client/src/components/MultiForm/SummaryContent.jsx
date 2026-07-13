@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useState, useCallback } from 'react'
 import { useAppointmentFormContext } from '../../context/AppointmentFormContext'
 import { Banknote, CalendarCheck2, CreditCard, Ratio, User2Icon } from 'lucide-react';
-import { allPaymentOptions, BUSINESS_INFO, paymentOptions } from '../../constants/contants';
+import { allPaymentOptions, BUSINESS_INFO, paymentOptions, WEEKDAY_PM_START, WEEKEND_PM_START } from '../../constants/contants';
 import { addOneHour, formatSlotTime, getDayType, getRateKey, getTimeType } from '../../utils/ValueFormat';
 import { cancelBookingInitiation, cancelBookingInitiationViaEwallet, checkAvailability, confirmBooking, confirmBookingViaEwallet } from '../../api/services/bookingService';
 import { toast } from 'sonner';
@@ -49,7 +49,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
     const slotBreakdown = (date && times?.length > 0)
         ? times.map(slotTime => {
             const dayType = getDayType(date);
-            const timeType = getTimeType(slotTime);
+            const timeType = getTimeType(slotTime, dayType);
             const rateKey = getRateKey(dayType, timeType);
             const rate = parseFloat(court?.[rateKey] ?? 0);
             return { slotTime, dayType, timeType, rate };
@@ -58,8 +58,17 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
 
     const totalAmount = slotBreakdown.reduce((sum, s) => sum + s.rate, 0);
 
+    const formatHour = (hour) => {
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        return `${displayHour}${period}`;
+    };
+
     const rateGroups = slotBreakdown.reduce((acc, s) => {
-        const label = `${s.dayType.charAt(0).toUpperCase() + s.dayType.slice(1)} ${s.timeType}`;
+        const baseLabel = `${s.dayType.charAt(0).toUpperCase() + s.dayType.slice(1)} ${s.timeType}`;
+        const label = s.timeType === 'PM'
+            ? `${baseLabel} (from ${formatHour(s.dayType === 'weekend' ? WEEKEND_PM_START : WEEKDAY_PM_START)})`
+            : baseLabel;
         if (!acc[label]) acc[label] = { rate: s.rate, count: 0 };
         acc[label].count++;
         return acc;

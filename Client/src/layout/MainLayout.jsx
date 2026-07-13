@@ -10,7 +10,6 @@ export const MainLayout = ({ children }) => {
                 <Header />
                 <main className="flex-1 overflow-y-auto">
                     {/* Offset for mobile hamburger button */}
-                    <div className="lg:hidden h-14" />
                     <div className="p-4 sm:p-6 lg:p-8">
                         {children}
                     </div>

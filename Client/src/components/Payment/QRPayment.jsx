@@ -98,7 +98,7 @@ export default function QRPayment({ booking, onClose, onPaymentSuccess, onIntent
                     <div className="flex justify-between text-gray-500 mt-1">
                         <span>Amount:</span>
                         <span className="font-semibold text-gray-800">
-                            ₱{parseFloat(booking.bookingDetails.paymentInfo.totalAmount).toFixed(2)}
+                            ₱{parseFloat(booking.bookingDetails.paymentInfo.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                 </div>

@@ -86,27 +86,27 @@ export const LandingHeader = () => {
                         </button>
 
                         {/* Dropdown */}
-                        <div className="absolute right-0 top-full mt-2 w-44 bg-primary/95 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                        <div className="px-4 py-3 border-b border-white/10">
-                            <p className="text-white text-xs font-bold truncate">{loggedInUser.firstName +" "+ loggedInUser.lastName}</p>
-                            <p className="text-white/50 text-xs truncate">{loggedInUser.email}</p>
-                        </div>
-                        <div className="py-1">
-                            {role == 'admin' || role == 'superadmin' && (
-                                <a href="dashboard" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
-                                    Dashboard
+                        <div className="absolute right-0 top-full mt-2 w-44 bg-primary/55 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div className="px-4 py-3 border-b border-white/10">
+                                <p className="text-white text-xs font-bold truncate">{loggedInUser.firstName +" "+ loggedInUser.lastName}</p>
+                                <p className="text-white/50 text-xs truncate">{loggedInUser.email}</p>
+                            </div>
+                            <div className="py-1">
+                                {role == 'admin' || role == 'superadmin' && (
+                                    <a href="dashboard" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
+                                        Dashboard
+                                    </a>
+                                )}
+                                <a href="profile" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
+                                    My Profile
                                 </a>
-                            )}
-                            <a href="profile" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
-                                My Profile
-                            </a>
-                            <button
-                                onClick={handleLogout}
-                                className="w-full text-left px-4 py-2 text-red-300 hover:text-red-200 hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150 hover:cursor-pointer"
-                            >
-                                Log Out
-                            </button>
-                        </div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-red-300 hover:text-red-200 hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150 hover:cursor-pointer"
+                                >
+                                    Log Out
+                                </button>
+                            </div>
                         </div>
                     </div>
                     ) : (
@@ -165,8 +165,8 @@ export const LandingHeader = () => {
             <div className={`md:hidden transition-all duration-300 overflow-hidden ${
                 menuOpen ? 'opacity-100' : 'max-h-0 opacity-0'
             }`}>
-                <div className="bg-[#005c9d]/95 backdrop-blur-md border-t border-white/10 px-6 py-4 flex flex-col gap-4">
-                    {['Features', 'Courts', 'Pricing', 'Reservation'].map((link) => (
+                <div className="bg-primary/75 backdrop-blur-md border-t border-white/10 px-6 py-4 flex flex-col gap-4">
+                    {['Features', 'Courts', 'Reservation'].map((link) => (
                         <a
                             key={link}
                             href={`#${link.toLowerCase()}`}
@@ -189,20 +189,22 @@ export const LandingHeader = () => {
                                     <p className="text-white/50 text-xs">{loggedInUser.email}</p>
                                 </div>
                             </div>
-
-                            <a href="#profile"
-                                onClick={() => setMenuOpen(false)}
-                                className="text-white/80 hover:text-white text-sm font-semibold tracking-wide transition-colors duration-200"
-                            >
-                                My Profile
-                            </a>
-                            
-                            <button
-                                onClick={() => { handleLogout(); setMenuOpen(false); }}
-                                className="text-red-300 hover:text-red-200 text-sm font-semibold tracking-wide text-left transition-colors duration-200 hover:cursor-pointer"
-                            >
-                                Log Out
-                            </button>
+                            <div className="py-1">
+                                {role == 'admin' || role == 'superadmin' && (
+                                    <a href="dashboard" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
+                                        Dashboard
+                                    </a>
+                                )}
+                                <a href="profile" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
+                                    My Profile
+                                </a>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-red-300 hover:text-red-200 hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150 hover:cursor-pointer"
+                                >
+                                    Log Out
+                                </button>
+                            </div>
                         </>
                     ) : (
                         <button
