@@ -34,7 +34,6 @@ export const LandingHeader = () => {
 
         return () => window.removeEventListener("scroll", handleScroll);
     },[])
-
     return (
         <>
        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -86,13 +85,13 @@ export const LandingHeader = () => {
                         </button>
 
                         {/* Dropdown */}
-                        <div className="absolute right-0 top-full mt-2 w-44 bg-primary/55 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div className="absolute right-0 top-full mt-2 w-44 bg-primary/75 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                             <div className="px-4 py-3 border-b border-white/10">
                                 <p className="text-white text-xs font-bold truncate">{loggedInUser.firstName +" "+ loggedInUser.lastName}</p>
                                 <p className="text-white/50 text-xs truncate">{loggedInUser.email}</p>
                             </div>
                             <div className="py-1">
-                                {role == 'admin' || role == 'superadmin' && (
+                                {(role == 'admin' || role == 'superadmin') && (
                                     <a href="dashboard" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
                                         Dashboard
                                     </a>
@@ -165,7 +164,7 @@ export const LandingHeader = () => {
             <div className={`md:hidden transition-all duration-300 overflow-hidden ${
                 menuOpen ? 'opacity-100' : 'max-h-0 opacity-0'
             }`}>
-                <div className="bg-primary/75 backdrop-blur-md border-t border-white/10 px-6 py-4 flex flex-col gap-4">
+                <div className={`border-t border-white/10 px-6 py-4 flex flex-col gap-4 ${isScrolled? '': 'bg-primary/95 backdrop-blur-md'}`}>
                     {['Features', 'Courts', 'Reservation'].map((link) => (
                         <a
                             key={link}
@@ -190,7 +189,7 @@ export const LandingHeader = () => {
                                 </div>
                             </div>
                             <div className="py-1">
-                                {role == 'admin' || role == 'superadmin' && (
+                                {(role == 'admin' || role == 'superadmin') && (
                                     <a href="dashboard" className="block px-4 py-2 text-white/75 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150">
                                         Dashboard
                                     </a>

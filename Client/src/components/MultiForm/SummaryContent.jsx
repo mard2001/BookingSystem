@@ -220,7 +220,7 @@ export const SummaryContent = ({ setIsChecking, setIsSubmitting, isConfirmed, se
                                 <div>
                                     <span className="uppercase text-[10px] text-secondary font-semibold">selected court</span>
                                     <p className="font-bold">{court?.courtLabel} ({court?.courtSport})</p>
-                                    <p className='text-xs text-secondary'>{court?.courtDesc}</p>
+                                    <p className='text-xs text-secondary'>{court.courtDesc ? (court.courtDesc.length > 100 ? court.courtDesc.slice(0, 100) + "..." : court.courtDesc): ''}</p>
                                 </div>
                             </div>
 

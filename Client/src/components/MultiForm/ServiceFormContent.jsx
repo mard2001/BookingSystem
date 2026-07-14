@@ -56,7 +56,7 @@ export const ServiceFormContent = () => {
                             </span>
                         </div>
 
-                        <p className='text-secondary text-sm mt-1'>{court.courtType} · {court.courtDesc} </p>
+                        <p className='text-secondary text-sm mt-1'>{court.courtType} • {court.courtDesc ? (court.courtDesc.length > 150 ? court.courtDesc.slice(0, 150) + "..." : court.courtDesc): ''} </p>
 
                         <button
                             disabled={isReserved}
