@@ -5,6 +5,7 @@ import * as response from '../utils/response.js';
 import 'dotenv/config';
 import { getDayType, getRateKey, getTimeType } from '../utils/valueFormats.js';
 import { validateFields, validateTransition } from '../utils/validateFields.js';
+import { logActivity } from './logController.js';
 
 
 export const getAvailableSlots = (req, res) => {
@@ -441,6 +442,14 @@ export const confirmBooking = async (req, res) => {
         );
 
         await commit();
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { bookingID, bookingDate, bookerFullName, bookerEmail, bookerContactNumber },
+            action: 'BOOKING_ADDED', entityType: 'BOOKING_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} addded new booking with a bookingID of ${bookingID}`
+        });
+
         return response.ok(res, 'Booking confirmed', { bookingID, totalAmount });
 
     } catch (err) {
@@ -492,6 +501,13 @@ export const updateBookingStatus = (req, res) => {
                         if (errSlots) return response.serverError(res, 'Database error', errSlots);
                         if (!slotsResult.affectedRows) return response.badRequest(res, 'Failed to update booking slots.');
 
+                        logActivity({
+                            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                            metadata: { bookingID, bookingStatus: status },
+                            action: 'BOOKING_UPDATED', entityType: 'BOOKING_MODULE',
+                            description: `${req.user?.fullname ?? 'Someone'} updated booking(${bookingID}) status into ${status}.`
+                        });
+                        
                         return response.ok(res, `Booking successfully updated to ${status}.`);
                     }
                 );
@@ -524,6 +540,13 @@ export const updateBookingBookerDetails = (req, res) => {
     db.query(updatequery, values, (err, result) => {
         if (err) return response.serverError(res, "Database error.", err);
         if (result.affectedRows === 0) return response.notFound(res, "Booking not found.");
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { bookingID, bookerFullName, bookerEmail, bookerContactNumber, status  },
+            action: 'BOOKING_UPDATED', entityType: 'BOOKING_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} updated the booking details of a booking with a bookingID of: ${bookingID}.`
+        });
 
         return response.ok(res, "Booking details updated successfully.", result);
     });
@@ -638,6 +661,14 @@ export const confirmBookingViaEWallet = async (req, res) => {
         );
 
         await conn.commit();
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { bookingID },
+            action: 'BOOKING_ADDED', entityType: 'BOOKING_MODULE',
+            description: `Booking with a bookingID of ${bookingID} is confirmed.`
+        });
+
         return response.ok(res, "Booking confirmed successfully.", bookingResult);
 
     } catch (err) {
@@ -913,6 +944,13 @@ export const createRecurringSched = async (req, res) => {
             createdSchedules.push({ scheduleID, ...report });
         }
 
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { bookingID, bookingDate, frequency, dayOfWeek, startTime, endTime, startDate, endDate, },
+            action: 'BOOKING_ADDED', entityType: 'BOOKING_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} addded regular booking.`
+        });
+
         return response.ok(res, 'Recurring schedule created successfully.', createdSchedules);
 
     } catch (err) {
@@ -1084,6 +1122,13 @@ export const cancelRegularAllBooking = async (req, res) => {
 
         await connection.commit();
         connection.release();
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { scheduleID, },
+            action: 'BOOKING_CANCELLED', entityType: 'BOOKING_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} cancelled a regular schedule with a scheduleID of: ${scheduleID}.`
+        });
 
         return response.ok(res, "All upcoming bookings under this regular schedule are successfully cancelled.", {
             cancelledBookingIDs: bookingIDs,

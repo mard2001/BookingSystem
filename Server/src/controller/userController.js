@@ -4,6 +4,7 @@ import { encrypt } from '../utils/Crypto.js';
 import * as response from '../utils/response.js';
 import 'dotenv/config';
 import { validateFields } from '../utils/validateFields.js';
+import { logActivity } from './logController.js';
 
 export const getAllUsers = (req, res) => {
     
@@ -165,6 +166,13 @@ export const updateUser = (req, res) => {
 
                 db.query(updateDetailsSql, updateDetailsValues, (errRes, dataRes) => {
                     if (errRes) return response.serverError(res, 'Database error', errRes);
+
+                    logActivity({
+                        userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                        metadata: { email, userID, },
+                        action: 'USER_UPDATED', entityType: 'USER_MODULE',
+                        description: `New user account updated: ${username} | (${firstName} ${lastName})`
+                    });
         
                     return response.ok(res, "Updating user details successful", dataRes);
                 })
@@ -184,6 +192,13 @@ export const deleteUser = (req, res) => {
     db.query(query, [getCurrentTimestamp(), userID], (err, result) => {
         if (err) return response.serverError(res, 'Database error', err);
         if (result.length > 0) return response.conflict(res, 'Deletion of user failed');
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { email, userID, },
+            action: 'USER_DELETED', entityType: 'USER_MODULE',
+            description: `New user account deleted with an user ID of: ${userID}`
+        });
 
         return response.ok(res, "User deleted successfully.", result);
     })

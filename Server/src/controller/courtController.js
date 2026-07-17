@@ -157,16 +157,10 @@ export const createNewCourt = async (req, res) => {
         await conn.commit();
 
         logActivity({
-            userId: req.user?.id ?? null,
-            userRole: req.user?.role ?? null,
-            action: 'COURT_ADDED',
-            entityType: 'COURT_MODULE',
-            entityId: '',
-            description: req.user
-                ? `${req.user.name || 'A user'} added new court in the list.`
-                : 'A guest added new court in the list',
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
             metadata: { courtSport, courtLabel, courtType, courtDesc },
-            ipAddress: req.ip
+            action: 'COURT_ADDED', entityType: 'COURT_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} addded new court with a courtID of ${result.insertId}`
         });
 
         return response.ok(res, "Court created successfully.", {
@@ -215,16 +209,10 @@ export const updateCourt = async (req, res) => {
 
         await conn.commit();
         logActivity({
-            userId: req.user?.id ?? null,
-            userRole: req.user?.role ?? null,
-            action: 'COURT_UPDATED',
-            entityType: 'COURT_MODULE',
-            entityId: '',
-            description: req.user?.fullname
-                ? `${req.user.fullname || 'A user'} added new court in the list.`
-                : 'A guest added new court in the list',
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
             metadata: { courtSport, courtLabel, courtType, courtDesc },
-            ipAddress: req.ip
+            action: 'COURT_UPDATED', entityType: 'COURT_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} updated court with a courtID of ${courtID}`
         });
         return response.ok(res, "Court updated successfully.", result);
 
@@ -294,6 +282,12 @@ export const deleteCourt = (req, res) => {
     db.query(query, [getCurrentTimestamp(), courtID], (err, result) => {
         if (err) return response.serverError(res, 'Database error', err);
         if (result.length > 0) return response.conflict(res, 'Deletion of court failed');
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            action: 'COURT_DELETED', entityType: 'COURT_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} deleted court with a courtID of ${courtID}`
+        });
 
         return response.ok(res, "Court deleted successfully.", result);
     })
@@ -377,6 +371,13 @@ export const createNewClosure = (req, res) => {
     db.query(query, values, (err, result) => {
         if (err) return response.serverError(res, 'Database error', err);
         if (result.length > 0) return response.conflict(res, 'Insertion of court closure failed');
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { reason, type, blackoutDateStart, blackoutDateEnd, scope },
+            action: 'COURT_CLOSURE_ADDED', entityType: 'COURT_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} addded new court closure due to ${reason}`
+        });
         
         return response.ok(res, "Court closure added successfully.", {
             ...req.body
@@ -394,6 +395,13 @@ export const deleteClosure = (req, res) => {
     db.query(query, [getCurrentTimestamp(), closureID], (err, result) => {
         if (err) return response.serverError(res, 'Database error', err);
         if (result.length > 0) return response.conflict(res, 'Deletion of court closure failed');
+
+        logActivity({
+            userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+            metadata: { closureID },
+            action: 'COURT_CLOSURE_ADDED', entityType: 'COURT_MODULE',
+            description: `${req.user?.fullname ?? 'Someone'} deleted court closure.`
+        });
 
         return response.ok(res, "Court closure deleted successfully.", result);
     })

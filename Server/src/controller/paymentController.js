@@ -5,6 +5,7 @@ import { getCurrentTimestamp, getExpiryTimestamp } from '../utils/calculateValue
 import * as response from '../utils/response.js';
 import { validateFields } from '../utils/validateFields.js';
 import 'dotenv/config';
+import { logActivity } from './logController.js';
 
 const PAYMONGO_BASE = 'https://api.paymongo.com/v1';
 const authHeader = () =>
@@ -105,6 +106,14 @@ export const initiatePayment = async (req, res) => {
                         [intentId, bookingID, getExpiryTimestamp(), now, now],
                         (err) => {
                             if (err) return response.serverError(res, 'Database error', err);
+
+                            logActivity({
+                                userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                                metadata: { intentId, bookingID },
+                                action: 'PAYMENT_INITIALIZED', entityType: 'PAYMENT_MODULE',
+                                description: `New payment is initialized for booking: ${bookingID}`
+                            });
+                            
                             return response.ok(res, 'Payment initiated successfully.', { intentId, qrImageUrl });
                         }
                     );
@@ -257,6 +266,13 @@ export const handleWebhookTEST = (req, res) => {
                                 }
 
                                 console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
+
+                                logActivity({
+                                    userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                                    metadata: { intentId, bookingID },
+                                    action: 'PAYMENT_SUCCESSFUL', entityType: 'PAYMENT_MODULE',
+                                    description: `New payment is successfuly paid for booking: ${bookingID}`
+                                });
                                 return res.sendStatus(200);
                             }
                         );

@@ -24,7 +24,7 @@ export const genericMiddleware = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.ACCESS_SECRET);
-        console.log(decoded);
+        console.log("decoded", decoded);
         req.user = decoded;
     } catch (err) {
         req.user = null; // invalid/expired token — still proceed, just unauthenticated

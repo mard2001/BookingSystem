@@ -47,14 +47,10 @@ export const register = (req, res) => {
                     if (err) return response.serverError(res, 'Database error', err);
 
                     logActivity({
-                        userId: data.insertId,
-                        userRole: role,
-                        action: 'USER_REGISTERED',
-                        entityType: 'USER_MODULE',
-                        entityId: data.insertId,
-                        description: `New user account registered: ${username} | (${firstName} ${lastName})`,
-                        metadata: { email, userID, userType: role },
-                        ipAddress: req.ip
+                        userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                        metadata: { email, userID, },
+                        action: 'USER_REGISTERED', entityType: 'USER_MODULE',
+                        description: `New user account registered: ${username} | (${firstName} ${lastName})`
                     });
 
                     return response.ok(res, "User creation successful", data);
@@ -115,14 +111,10 @@ export const registerCustomer = (req, res) => {
                             if (err) return response.serverError(res, 'Database error', err);
 
                             logActivity({
-                                userId: data.insertId,
-                                userRole: role,
-                                action: 'USER_REGISTERED',
-                                entityType: 'user',
-                                entityId: data.insertId,
-                                description: `New customer account registered: ${username} | (${firstName} ${lastName})`,
-                                metadata: { email, userID, userType: role },
-                                ipAddress: req.ip
+                                userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                                metadata: { email, userID },
+                                action: 'USER_REGISTERED', entityType: 'USER_MODULE',
+                                description: `New customer account registered: ${username} | (${firstName} ${lastName})`
                             });
 
                             return response.ok(res, "Customer creation successful", rows[0]);
@@ -187,14 +179,10 @@ export const registerAdmin = (req, res) => {
                             if (err) return response.serverError(res, 'Database error', err);
 
                             logActivity({
-                                userId: data.insertId,
-                                userRole: role,
-                                action: 'USER_REGISTERED',
-                                entityType: 'user',
-                                entityId: data.insertId,
-                                description: `New admin account registered: ${username} | (${firstName} ${lastName})`,
-                                metadata: { email, userID, userType: role },
-                                ipAddress: req.ip
+                                userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
+                                metadata: { email, userID },
+                                action: 'USER_REGISTERED', entityType: 'USER_MODULE',
+                                description: `New admin account registered: ${username} | (${firstName} ${lastName})`
                             });
 
                             return response.ok(res, "Admin creation successful", rows[0]);
