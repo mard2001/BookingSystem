@@ -3,13 +3,13 @@ import "dotenv/config";
 
 export const generateTokens = (user) => {
     const accessToken = jwt.sign(
-        { id: user.id, role: user.role },
+        { id: user.id, role: user.userType, fullname: user.firstName+" "+user.lastName },
         process.env.ACCESS_SECRET,
         { expiresIn: '15m' }
     );
 
     const refreshToken = jwt.sign(
-        { id: user.id, role: user.role },
+        { id: user.id, role: user.userType, fullname: user.firstName+" "+user.lastName },
         process.env.REFRESH_SECRET,
         { expiresIn: '7d' }
     );

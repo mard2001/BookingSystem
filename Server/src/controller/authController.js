@@ -8,6 +8,7 @@ import { calculateAgeFromBirthDate, getCurrentTimestamp } from '../utils/calcula
 import { compareEncryption, encrypt } from '../utils/Crypto.js';
 import { validateFields } from '../utils/validateFields.js';
 import { cookieOptions, generateTokens } from '../utils/tokens.js';
+import { logActivity } from './logController.js';
 
 export const register = (req, res) => {
     if (!validateFields(req, res, [
@@ -44,6 +45,17 @@ export const register = (req, res) => {
 
                 db.query(insertDetailsSql, insertDetailsValues, (err, data) => {
                     if (err) return response.serverError(res, 'Database error', err);
+
+                    logActivity({
+                        userId: data.insertId,
+                        userRole: role,
+                        action: 'USER_REGISTERED',
+                        entityType: 'USER_MODULE',
+                        entityId: data.insertId,
+                        description: `New user account registered: ${username} | (${firstName} ${lastName})`,
+                        metadata: { email, userID, userType: role },
+                        ipAddress: req.ip
+                    });
 
                     return response.ok(res, "User creation successful", data);
                 });
@@ -102,7 +114,18 @@ export const registerCustomer = (req, res) => {
                         db.query(fetchUserSql, [result.insertId], (err, rows) => {
                             if (err) return response.serverError(res, 'Database error', err);
 
-                            return response.ok(res, "User creation successful", rows[0]);
+                            logActivity({
+                                userId: data.insertId,
+                                userRole: role,
+                                action: 'USER_REGISTERED',
+                                entityType: 'user',
+                                entityId: data.insertId,
+                                description: `New customer account registered: ${username} | (${firstName} ${lastName})`,
+                                metadata: { email, userID, userType: role },
+                                ipAddress: req.ip
+                            });
+
+                            return response.ok(res, "Customer creation successful", rows[0]);
                         });
                     });
                 }
@@ -163,7 +186,18 @@ export const registerAdmin = (req, res) => {
                         db.query(fetchUserSql, [result.insertId], (err, rows) => {
                             if (err) return response.serverError(res, 'Database error', err);
 
-                            return response.ok(res, "User creation successful", rows[0]);
+                            logActivity({
+                                userId: data.insertId,
+                                userRole: role,
+                                action: 'USER_REGISTERED',
+                                entityType: 'user',
+                                entityId: data.insertId,
+                                description: `New admin account registered: ${username} | (${firstName} ${lastName})`,
+                                metadata: { email, userID, userType: role },
+                                ipAddress: req.ip
+                            });
+
+                            return response.ok(res, "Admin creation successful", rows[0]);
                         });
                     });
                 }

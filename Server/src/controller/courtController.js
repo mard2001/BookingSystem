@@ -4,6 +4,7 @@ import { generateBookingID } from '../utils/codeGenerator.js';
 import * as response from '../utils/response.js';
 import 'dotenv/config';
 import { validateFields } from '../utils/validateFields.js';
+import { logActivity } from './logController.js';
 
 export const getAllCourts = (req, res) => {
     
@@ -155,6 +156,19 @@ export const createNewCourt = async (req, res) => {
 
         await conn.commit();
 
+        logActivity({
+            userId: req.user?.id ?? null,
+            userRole: req.user?.role ?? null,
+            action: 'COURT_ADDED',
+            entityType: 'COURT_MODULE',
+            entityId: '',
+            description: req.user
+                ? `${req.user.name || 'A user'} added new court in the list.`
+                : 'A guest added new court in the list',
+            metadata: { courtSport, courtLabel, courtType, courtDesc },
+            ipAddress: req.ip
+        });
+
         return response.ok(res, "Court created successfully.", {
             courtID: result.insertId,
             ...req.body
@@ -200,6 +214,18 @@ export const updateCourt = async (req, res) => {
         }
 
         await conn.commit();
+        logActivity({
+            userId: req.user?.id ?? null,
+            userRole: req.user?.role ?? null,
+            action: 'COURT_UPDATED',
+            entityType: 'COURT_MODULE',
+            entityId: '',
+            description: req.user?.fullname
+                ? `${req.user.fullname || 'A user'} added new court in the list.`
+                : 'A guest added new court in the list',
+            metadata: { courtSport, courtLabel, courtType, courtDesc },
+            ipAddress: req.ip
+        });
         return response.ok(res, "Court updated successfully.", result);
 
     } catch (err) {
@@ -207,6 +233,7 @@ export const updateCourt = async (req, res) => {
         return response.serverError(res, "Failed to update court.", err);
     } finally {
         if (conn) conn.release();
+
     }
 };
 

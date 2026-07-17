@@ -7,6 +7,7 @@ import authRouter from './src/routes/authRouter.js';
 import bookingRouter from './src/routes/bookingRouter.js';
 import paymentRouter from './src/routes/paymentRouter.js';
 import dashboardRouter from './src/routes/dashboardRouter.js';
+import logRouter from './src/routes/logRouter.js';
 import { expireOverduePayments } from './src/jobs/cron/expirePayments.js';
 import cron from 'node-cron';
 import { completeBookings, pendingBookingsExceededAllocatedTime } from './src/jobs/cron/bookings.js';
@@ -35,6 +36,7 @@ app.use("/api/v1/bookings", bookingRouter);
 app.use("/api/v1/courts", courtRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/payments", paymentRouter);
+app.use("/api/v1/logs", logRouter);
 
 
 app.listen(process.env.SERVER_PORT, () => {
