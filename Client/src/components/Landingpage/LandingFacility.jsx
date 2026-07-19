@@ -5,7 +5,7 @@ import { BUSINESS_INFO } from '../../constants/contants'
 
 export const LandingFacility = () => {
   return (
-    <div id="courts" className='flex flex-col lg:flex-row mb-10 pt-30'>
+    <div id="courts" className='flex flex-col lg:flex-row pt-30'>
         <div className="FacilityleftCont flex-1 mt-15 order-2 lg:order-1">
             <div className='px-10 xl:pl-20 mb-5'>
                 <p className='uppercase tracking-wide text-primary '>The Facility</p>

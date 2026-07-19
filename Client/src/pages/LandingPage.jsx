@@ -6,6 +6,7 @@ import { LandingFoot } from '../components/Landingpage/LandingFoot'
 import Footer from '../components/Footer'
 import { MultiStepForm } from '../components/MultiForm/MultiStepForm'
 import { AppointmentFormProvider } from '../context/AppointmentFormContext'
+import { LandingAbout } from '../components/Landingpage/LandingAbout'
 
 const LandingPage = () => {
     return (
@@ -13,6 +14,7 @@ const LandingPage = () => {
             <LandingHeader />
             <LandingHero />
             <LandingFacility />
+            <LandingAbout />
             <AppointmentFormProvider>
                 <div id='reservation' className='min-h-screen pt-35 px-4'>
                     <div>
