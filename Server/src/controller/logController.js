@@ -4,7 +4,12 @@ import * as response from '../utils/response.js';
 import 'dotenv/config';
 
 export const getAllActivityLogs = (req, res) => {
-    const q = 'SELECT * FROM tbl_activity_logs ORDER BY createdAt DESC';
+    const q = `
+            SELECT al.id, al.action, al.entity_type, al.entity_id, al.description, al.createdAt
+            FROM tbl_activity_logs al
+            ORDER BY al.createdAt DESC
+            LIMIT 10;
+        `;
 
     db.query(q, (err, data) => {
         if(err) return response.serverError(res, "Database error", err);

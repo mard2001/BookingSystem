@@ -192,3 +192,25 @@ export const formatDateOnly = (date) => {
 // 10:00
 export const formatClockTime = (s) =>
         `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+// 2026-07-19T12:45:20.000Z
+// 2 days ago
+export const timeAgo = (dateString) => {
+    const diffMs = Date.now() - new Date(dateString).getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+
+    if (diffSec < 60) return "Less than a minute ago";
+
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} min${diffMin > 1 ? "s" : ""} ago`;
+
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} hr${diffHr > 1 ? "s" : ""} ago`;
+
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 7) return `${diffDay} day${diffDay > 1 ? "s" : ""} ago`;
+
+    return new Intl.DateTimeFormat("en-PH", {timeZone: "Asia/Manila", month: "short", day: "numeric", year: "numeric", }).format(new Date(dateString));
+}
+
+
