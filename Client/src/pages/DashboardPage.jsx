@@ -3,7 +3,7 @@ import React from 'react'
 import { useState } from 'react';
 import { useMemo } from 'react';
 import { useEffect } from 'react';
-import { StatsGrid } from "../components/StatsGrid";
+import { StatsGrid3 } from "../components/StatsGrid3";
 import { StatsGrid2 } from "../components/StatsGrid2";
 import { getExportFilename } from '../utils/ExportTable';
 import { DataTable } from '../components/DataTable';
@@ -86,12 +86,12 @@ export const DashboardPage = () => {
   ];
 
   const dashboardStats = useMemo(() => [
-    { icon: CalendarCheck, iconColor: "text-primary", label: "Total Bookings", value: Number(dashboardData?.totalBookings) || 0 },
-    { icon: TicketPercent, iconColor: "text-primary", label: "Occupancy Rate", value: (dashboardData?.occupancyRate + "%") || "-" },
-    { icon: BanknoteArrowDown, iconColor: "text-primary", label: "Monthly Revenue", value: formatCurrency(dashboardData?.totalRevenue) || 0 },
-    { icon: Users2Icon, iconColor: "text-primary", label: "Registered Customers", value: Number(dashboardData?.totalCustomers) || 0 },
-    { icon: RatioIcon, iconColor: "text-primary", label: "Active Courts", value: Number(dashboardData?.totalActiveCourts) || 0 },
-  ], [dashboardData]);
+  { icon: CalendarCheck, iconColor: "text-primary", label: "Total Bookings", subtext: "Confirmed This Month", value: Number(dashboardData?.totalBookings) || 0 },
+  { icon: TicketPercent, iconColor: "text-primary", label: "Occupancy Rate", subtext: "Court Usage", value: dashboardData?.occupancyRate != null ? `${dashboardData.occupancyRate}%` : "-" },
+  { icon: BanknoteArrowDown, iconColor: "text-primary", label: "Monthly Revenue", subtext: "This Month", value: dashboardData?.totalRevenue != null ? formatCurrency(dashboardData.totalRevenue) : 0 },
+  { icon: Users2Icon, iconColor: "text-primary", label: "Registered Customers", subtext: "Total Users", value: Number(dashboardData?.totalCustomers) || 0 },
+  // { icon: RatioIcon, iconColor: "text-primary", label: "Active Courts", subtext: "In use", value: Number(dashboardData?.totalActiveCourts) || 0 },
+], [dashboardData]);
 
   const dashboardStatusStats = useMemo(() => [
     { icon: HourglassIcon, accentColor: "bg-[#F59E0B]", label: "Pending Bookings", value: Number(dashboardData?.monthPending) || 0 },
@@ -205,17 +205,17 @@ export const DashboardPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
             <div>
               <p className="text-2xl sm:text-3xl font-bold text-primary">Dashboard Overview</p>
-              <p className="text-sm text-secondary">Welcome back, admin. Here's what's happening today.</p>
+              <p className="text-sm text-secondary">Welcome back, admin. Here's what's happening this month.</p>
             </div>
           </div>
         </div>
         <div className='flex flex-col 2xl:flex-row gap-5'>
           <div className='flex-1'>
-            <StatsGrid items={dashboardStats} maxCols={5} />
+            <StatsGrid3 items={dashboardStats} maxCols={4} />
             <StatsGrid2 items={dashboardStatusStats} maxCols={4} />
 
-            <div className='grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-5 gap-1 lg:gap-4 '>
-              <div className='lg:col-span-3 bg-card p-5 rounded-2xl shadow-xl mb-5'>
+            <div className='grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-5 gap-1 lg:gap-4 '>
+              <div className='xl:col-span-3 bg-card p-5 rounded-2xl shadow-xl mb-5'>
                 <div className='mb-12 flex items-center justify-between'>
                   <p className='text-primary font-semibold '>Booking Trends (Last 12 months)</p>
                 </div>
@@ -224,7 +224,7 @@ export const DashboardPage = () => {
                 )}
               </div>
 
-              <div className='lg:col-span-2 bg-card p-5 rounded-2xl shadow-xl mb-5 overflow-hidden'>
+              <div className='xl:col-span-2 bg-card p-5 rounded-2xl shadow-xl mb-5 overflow-hidden'>
                 <div className='mb-5 flex items-center justify-between'>
                   <p className='text-primary font-semibold '>Revenue by Sport</p>
                 </div>

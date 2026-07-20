@@ -12,7 +12,7 @@ export const StatsGrid2 = ({ items = [], maxCols = 4 }) => {
 
   return (
     <div className="mb-5">
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgCols} gap-4`}>
+      <div className={`grid grid-cols-2 sm:grid-cols-2 ${lgCols} gap-4`}>
         {items.map((item, index) => (
           <div key={index} className="bg-card rounded-2xl py-2 px-4  shadow-md flex items-center gap-3">
             <span className={`w-1.5 h-10 rounded-full shrink-0 ${item.accentColor ?? "bg-primary"}`}/>

@@ -56,7 +56,11 @@ function CalendarBookingApp() {
         views: [createViewDay(), createViewWeekAgenda(), createViewWeek(), createViewMonthGrid(), createViewMonthAgenda()],
         events: [],
         plugins: [eventsService, eventModal],
-        timezone: 'Asia/Manila'
+        timezone: 'Asia/Manila',
+        // dayBoundaries: {
+        //     start: '16:00',
+        //     end: '23:00',
+        // },
     });
 
     const fetchMonth = async (year, month) => {
