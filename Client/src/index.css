@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
 
 @import "tailwindcss";
@@ -45,7 +46,7 @@
   }
   #calendarClosureMainDiv .sx__date-input {
     display: none !important;
-}
+  }
 
   html {
     scroll-behavior: smooth;
@@ -54,16 +55,22 @@
   
   body{
     /* background-color: var(--color-surface); */
-    background: linear-gradient(to bottom, #FFF, color-mix(in srgb, var(--color-primary) 30%, transparent));
+    background: linear-gradient(to bottom, #FFEDE5, color-mix(in srgb, #FFDBCA 30%, transparent));
   }
 
   .sx-react-calendar-wrapper {
-  --sx-color-background: #ecebec;       
-  --sx-color-surface: #ecebec;           
-  --sx-color-on-surface: #1a1a1a;  
-  --sx-color-border: #f0e2e6;      
+    --sx-color-background: #ecebec;       
+    --sx-color-surface: #ecebec;           
+    --sx-color-on-surface: #1a1a1a;  
+    --sx-color-border: #f0e2e6;      
+  }
+  .title_ebgaramond {
+    font-family: "EB Garamond", serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
 }
-}
+
 @layer components{
   .glass {
     background-color: color-mix(in srgb, var(--color-primary-foreground) 60%, transparent);
@@ -106,4 +113,5 @@
     border-bottom-right-radius: 50px;
   }
 }
+
 @layer utilities{}

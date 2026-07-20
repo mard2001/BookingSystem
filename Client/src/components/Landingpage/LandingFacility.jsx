@@ -1,81 +1,71 @@
-import { Check, MapPin } from 'lucide-react'
+import { Check, Droplet, MapPin, Moon, Thermometer, Trophy, Zap } from 'lucide-react'
 import React from 'react'
 import { LandingMapContainer } from './LandingMapContainer'
 import { BUSINESS_INFO } from '../../constants/contants'
 
 export const LandingFacility = () => {
-  return (
-    <div id="courts" className='flex flex-col lg:flex-row pt-30'>
-        <div className="FacilityleftCont flex-1 mt-15 order-2 lg:order-1">
-            <div className='px-10 xl:pl-20 mb-5'>
-                <p className='uppercase tracking-wide text-primary '>The Facility</p>
-                <p className='uppercase text-3xl mb-5'>A New Standard in Recreational Excellence</p>
-                <p className='text-muted text-sm'>Bunal Brad Courts is more than just a place to play—it's a destination built around community, competition, and unforgettable experiences. Our outdoor courts engineered to deliver consistent ball bounce, excellent traction, and enhanced comfort, creating the ideal environment for players of all skill levels to enjoy the game.</p>
-            </div>
+    const AMENITIES = [
+        { icon: Trophy, label: 'Tournament-Rated Court' },
+        { icon: Zap, label: 'Pro-Grade Lighting' },
+        { icon: Moon, label: 'Night Play Ready' },
+        { icon: Thermometer, label: 'Climate Control' },
+        { icon: Droplet, label: 'Hydration Stations' },
+    ]
 
-            <div className='px-10 xl:px-20 mb-5'>
-                <div className='bg-card/30 w-full rounded-xl flex flex-wrap p-5 justify-around grid grid-cols-2 gap-4 shadow-lg inset-shadow-sm'>
-                    <div className='flex items-center'>
-                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
-                            <Check className='w-4 h-4 text-primary'/>
+    return (
+        <div id="courts" className='flex flex-col lg:flex-row pt-30'>
+            <div className="FacilityleftCont flex-1 mt-15 order-2 lg:order-1">
+                <div className='px-10 xl:pl-20 mb-5'>
+                    <p className='uppercase tracking-widest text-xs font-semibold text-primary mb-2'>The Facility</p>
+                    <p className='uppercase text-3xl md:text-4xl leading-tight mb-5'>A New Standard in Recreational Excellence</p>
+                    <p className='text-muted text-sm'>Bunal Brad Courts is more than just a place to play—it's a destination built around community, competition, and unforgettable experiences. Our outdoor courts engineered to deliver consistent ball bounce, excellent traction, and enhanced comfort, creating the ideal environment for players of all skill levels to enjoy the game.</p>
+                </div>
+
+                <div className='px-10 xl:px-20 mb-5'>
+                    <div className='grid grid-cols-2 xl:grid-cols-3 gap-3'>
+                        {AMENITIES.map(({ icon: Icon, label }) => (
+                        <div
+                            key={label}
+                            className='flex flex-col items-start gap-3 rounded-xl border border-black/5 bg-white/60 p-4 transition-all duration-200 hover:bg-white/90 hover:shadow-md hover:-translate-y-0.5'
+                        >
+                            <div className='w-9 h-9 bg-primary flex items-center justify-center rounded-full shrink-0'>
+                            <Icon className='w-4 h-4 text-white/90' />
+                            </div>
+                            <span className='text-highlight text-sm font-medium leading-snug'>
+                            {label}
+                            </span>
                         </div>
-                        <span className='pl-2 text-highlight text-sm'>Tournament-Rated Court</span>
+                        ))}
                     </div>
-                    <div className='flex items-center'>
-                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
-                            <Check className='w-4 h-4 text-primary'/>
-                        </div>
-                        <span className='pl-2 text-highlight text-sm'>Pro-Grade Lighting</span>
-                    </div>
-                    <div className='flex items-center'>
-                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
-                            <Check className='w-4 h-4 text-primary'/>
-                        </div>
-                        <span className='pl-2 text-highlight text-sm'>Night Play Ready</span>
-                    </div>
-                    <div className='flex items-center'>
-                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
-                            <Check className='w-4 h-4 text-primary'/>
-                        </div>
-                        <span className='pl-2 text-highlight text-sm'>Climate Control</span>
-                    </div>
-                    <div className='flex items-center'>
-                        <div className='w-6 h-6 bg-secondary/50 flex items-center justify-center rounded-full'>
-                            <Check className='w-4 h-4 text-primary'/>
-                        </div>
-                        <span className='pl-2 text-highlight text-sm'>Hydration Stations</span>
-                    </div>
-                    
+                </div>
+                <div className="px-10 xl:px-20 relative">
+                    <LandingMapContainer />
                 </div>
             </div>
-            <div className="px-10 xl:px-20 relative">
-                <LandingMapContainer />
-            </div>
-        </div>
-        <div className="FacilityrightCont flex-1 order-1 lg:order-2">
-            <div className='flex items-center justify-center md:px-10'>
-                <div className='w-[90%] md:w-full xl:w-138 bg-white/50 flex items-center justify-center rounded-2xl shadow-lg inset-shadow-sm p-4'>
-                    <div className='relative w-full h-100 lg:h-auto'>
-                        <img 
-                            src="./images/bunalBradCourt.png" 
-                            alt="" 
-                            className='w-full h-100 lg:h-auto object-cover rounded-xl' 
-                        />
-                        <div className='absolute bottom-5 left-2 min-md:left-5 flex flex-row items-center glass rounded-2xl p-4'>
-                            <div>
-                                <div className='w-10 h-10 md:w-12 md:h-12 bg-primary flex items-center justify-center rounded-full mr-1 md:mr-3'>
-                                    <MapPin className='w-5 h-5 md:w-7 md:h-7 text-muted-foreground' />
+            <div className="FacilityrightCont flex-1 order-1 lg:order-2">
+                <div className='flex items-center justify-center md:px-10'>
+                    <div className='w-[90%] md:w-full xl:w-138 bg-white/50 flex items-center justify-center rounded-2xl shadow-lg inset-shadow-sm p-4 '>
+                        <div className='relative w-full h-100 lg:h-auto'>
+                            <img 
+                                src="./images/bunalBradCourt.png" 
+                                alt="" 
+                                className='w-full h-100 lg:h-auto object-cover rounded-xl' 
+                            />
+                            <div className='absolute bottom-5 left-2 min-md:left-5 flex flex-row items-center glass rounded-2xl p-4'>
+                                <div>
+                                    <div className='w-10 h-10 md:w-12 md:h-12 bg-primary flex items-center justify-center rounded-full mr-1 md:mr-3'>
+                                        <MapPin className='w-5 h-5 md:w-7 md:h-7 text-muted-foreground' />
+                                    </div>
+                                </div>
+                                <div className='flex flex-col'>
+                                    <span className='uppercase trailing-wide text-primary text-sm'>Find Us</span>
+                                    <span className='text-xs'>{BUSINESS_INFO.address}</span>
                                 </div>
                             </div>
-                            <div className='flex flex-col'>
-                                <span className='uppercase trailing-wide text-primary text-sm'>Find Us</span>
-                                <span className='text-xs'>{BUSINESS_INFO.address}</span>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-  )
+    )
 }

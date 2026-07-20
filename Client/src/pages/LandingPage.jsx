@@ -16,13 +16,18 @@ const LandingPage = () => {
             <LandingFacility />
             <LandingAbout />
             <AppointmentFormProvider>
-                <div id='reservation' className='min-h-screen pt-35 px-4'>
-                    <div>
-                        <div className='text-center mb-15'>
-                            <h1 className='text-primary max-sm:text-4xl text-5xl font-bold mb-4'>Book Your Next Pickleball Match</h1>
-                            <p className='text-muted'>Reserve premium courts, choose your preferred schedule, and get ready to play.</p>
-                            <p className='text-secondary text-sm'>Secure your game time and enjoy a seamless reservation experience.</p>
-                        </div>
+                <div id='reservation' className='min-h-screen pt-24 md:pt-32 px-4 md:px-6'>
+                    <div className='text-center mb-12 md:mb-16'>
+                        <p className='uppercase tracking-widest text-xs font-semibold text-primary mb-3'>
+                            Reserve Your Court
+                        </p>
+                        <h1 className='text-primary text-4xl sm:text-5xl font-bold tracking-tight mb-4'>
+                            Book Your Next Pickleball Match
+                        </h1>
+                        <p className='text-muted text-sm max-w-md mx-auto leading-relaxed'>
+                            Reserve a premium court, choose your preferred schedule, and secure your
+                            game time in just a few steps.
+                        </p>
                     </div>
                     <MultiStepForm />
                 </div>

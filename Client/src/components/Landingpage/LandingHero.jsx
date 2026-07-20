@@ -15,7 +15,7 @@ const LandingHero = () => {
             Play at {BUSINESS_INFO.name}
           </h2>
           <p className='titleSubHeader1 text-sm md:text-md text-lg text-primary-foreground/50 -mb-1'>
-            Talamban's Premier pickleball facility.
+            Discover Ylaya’s premier pickleball facility. Meticulously maintained courts, professional lighting, and a community built on the love of the rally.
           </p>
           <p className='titleSubHeader2 text-sm md:text-md text-lg text-primary-foreground/50'>
             Book your schedule today.
