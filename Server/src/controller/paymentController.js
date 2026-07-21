@@ -302,8 +302,11 @@ export const handleWebhook = (req, res) => {
             .update(`${timestamp}.${rawBody}`)
             .digest('hex');
 
-        if (computed !== receivedSig) return res.status(400).json({ error: 'Invalid signature.' });
-
+        if (computed !== receivedSig) {
+            console.warn('[Webhook] Signature mismatch. Computed:', computed, 'Received:', receivedSig);
+            return res.status(400).json({ error: 'Invalid signature.' });
+        }
+        
         const event = JSON.parse(rawBody);
         const eventType = event.data.attributes.type;
 
