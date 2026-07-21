@@ -30,7 +30,7 @@ export const initiatePayment = async (req, res) => {
                         payment_method_allowed: ['qrph'],
                         currency: 'PHP',
                         capture_type: 'automatic',
-                        description: `Booking #${bookingID} - Ylaya Smash Rally`,
+                        description: `Booking #${bookingID} - Bunal Brad`,
                         metadata: { booking_id: bookingID },
                     },
                 },
@@ -321,40 +321,45 @@ export const handleWebhook = (req, res) => {
              SET payment_status = 'paid', status = 'completed', paidAt = ?, updatedAt = ?
              WHERE bookingID = ? AND payment_intent_id = ?`,
             [now, now, bookingID, intentId],
-            (err) => {
-                if (err) {
-                    console.error('[Webhook] Payment update error:', err);
+            (err, result) => {
+                try {
+                    if (err) {
+                        console.error('[Webhook] Payment update error:', err);
+                        return res.sendStatus(500);
+                    }
+
+                    if (result.affectedRows === 0) {
+                        console.warn(`[Webhook] No matching row for bookingID=${bookingID}, intentId=${intentId}`);
+                    }
+
+                    db.query(
+                        `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                        [now, bookingID],
+                        (err) => {
+                            if (err) {
+                                console.error('[Webhook] Booking update error:', err);
+                                return res.sendStatus(500);
+                            }
+
+                            db.query(
+                                `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                                [now, bookingID],
+                                (err) => {
+                                    if (err) {
+                                        console.error('[Webhook] Booking update error:', err);
+                                        return res.sendStatus(500);
+                                    }
+
+                                    console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
+                                    return res.sendStatus(200);
+                                }
+                            );
+                        }
+                    );
+                } catch (innerErr) {
+                    console.error('[Webhook] Unexpected error in DB callback:', innerErr);
                     return res.sendStatus(500);
                 }
-
-                if (result.affectedRows === 0) {
-                    console.warn(`[Webhook] No matching row for bookingID=${bookingID}, intentId=${intentId}`);
-                }
-
-                db.query(
-                    `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
-                    [now, bookingID],
-                    (err) => {
-                        if (err) {
-                            console.error('[Webhook] Booking update error:', err);
-                            return res.sendStatus(500);
-                        }
-
-                        db.query(
-                            `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
-                            [now, bookingID],
-                            (err) => {
-                                if (err) {
-                                    console.error('[Webhook] Booking update error:', err);
-                                    return res.sendStatus(500);
-                                }
-
-                                console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
-                                return res.sendStatus(200);
-                            }
-                        );
-                    }
-                );
             }
         );
 
