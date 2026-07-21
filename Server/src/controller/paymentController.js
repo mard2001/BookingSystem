@@ -289,6 +289,7 @@ export const handleWebhookTEST = (req, res) => {
 export const handleWebhook = (req, res) => {
     console.log('[HANDLE WEB HOOK], called and executed.')
     const sigHeader = req.headers['paymongo-signature'];
+    console.log('[Webhook] Raw signature header:', sigHeader); // ← add this
     if (!sigHeader) return response.badRequest(res, 'Missing signature header.');
 
     try {
@@ -306,7 +307,7 @@ export const handleWebhook = (req, res) => {
             console.warn('[Webhook] Signature mismatch. Computed:', computed, 'Received:', receivedSig);
             return res.status(400).json({ error: 'Invalid signature.' });
         }
-        
+
         const event = JSON.parse(rawBody);
         const eventType = event.data.attributes.type;
 
