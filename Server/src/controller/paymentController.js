@@ -287,8 +287,9 @@ export const handleWebhookTEST = (req, res) => {
 };
 
 export const handleWebhook = (req, res) => {
+    console.log('[HANDLE WEB HOOK], called and executed.')
     const sigHeader = req.headers['paymongo-signature'];
-    if (!sigHeader) return response.badRequest(res, 'Missing signature header.'); // ✅ strict
+    if (!sigHeader) return response.badRequest(res, 'Missing signature header.');
 
     try {
         const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
@@ -309,57 +310,70 @@ export const handleWebhook = (req, res) => {
         if (eventType !== 'payment.paid') return res.sendStatus(200);
 
         const paymentAttrs = event.data.attributes.data.attributes;
-        const bookingID = paymentAttrs.metadata?.booking_id;
-        const intentId = paymentAttrs.payment_intent_id;;
+        const intentId = paymentAttrs.payment_intent_id;
 
-        if (!bookingID) return res.sendStatus(200);
+        if (!intentId) {
+            console.warn('[Webhook] No payment_intent_id in payload — unexpected payload shape.');
+            return res.sendStatus(200);
+        }
 
         const now = getCurrentTimestamp();
 
+        // Match by payment_intent_id alone — don't rely on metadata being present
         db.query(
             `UPDATE tbl_booking_payment
              SET payment_status = 'paid', status = 'completed', paidAt = ?, updatedAt = ?
-             WHERE bookingID = ? AND payment_intent_id = ?`,
-            [now, now, bookingID, intentId],
+             WHERE payment_intent_id = ?`,
+            [now, now, intentId],
             (err, result) => {
-                try {
-                    if (err) {
-                        console.error('[Webhook] Payment update error:', err);
-                        return res.sendStatus(500);
-                    }
-
-                    if (result.affectedRows === 0) {
-                        console.warn(`[Webhook] No matching row for bookingID=${bookingID}, intentId=${intentId}`);
-                    }
-
-                    db.query(
-                        `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
-                        [now, bookingID],
-                        (err) => {
-                            if (err) {
-                                console.error('[Webhook] Booking update error:', err);
-                                return res.sendStatus(500);
-                            }
-
-                            db.query(
-                                `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
-                                [now, bookingID],
-                                (err) => {
-                                    if (err) {
-                                        console.error('[Webhook] Booking update error:', err);
-                                        return res.sendStatus(500);
-                                    }
-
-                                    console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
-                                    return res.sendStatus(200);
-                                }
-                            );
-                        }
-                    );
-                } catch (innerErr) {
-                    console.error('[Webhook] Unexpected error in DB callback:', innerErr);
+                if (err) {
+                    console.error('[Webhook] Payment update error:', err);
                     return res.sendStatus(500);
                 }
+
+                if (result.affectedRows === 0) {
+                    console.warn(`[Webhook] No matching row for intentId=${intentId}`);
+                    return res.sendStatus(200);
+                }
+
+                // Look up bookingID from the row we just updated, since the webhook payload doesn't reliably carry it
+                db.query(
+                    `SELECT bookingID FROM tbl_booking_payment WHERE payment_intent_id = ?`,
+                    [intentId],
+                    (err, rows) => {
+                        if (err || !rows.length) {
+                            console.error('[Webhook] Could not resolve bookingID for intentId:', intentId, err);
+                            return res.sendStatus(200); // payment record updated; booking cascade can be reconciled separately
+                        }
+
+                        const bookingID = rows[0].bookingID;
+
+                        db.query(
+                            `UPDATE tbl_bookings SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                            [now, bookingID],
+                            (err) => {
+                                if (err) {
+                                    console.error('[Webhook] Booking update error:', err);
+                                    return res.sendStatus(500);
+                                }
+
+                                db.query(
+                                    `UPDATE tbl_booking_slots SET status = 'confirmed', updatedAt = ? WHERE bookingID = ?`,
+                                    [now, bookingID],
+                                    (err) => {
+                                        if (err) {
+                                            console.error('[Webhook] Booking update error:', err);
+                                            return res.sendStatus(500);
+                                        }
+
+                                        console.log(`[Webhook] Booking ${bookingID} confirmed after payment.`);
+                                        return res.sendStatus(200);
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
             }
         );
 
