@@ -310,7 +310,7 @@ export const handleWebhook = (req, res) => {
 
         const paymentAttrs = event.data.attributes.data.attributes;
         const bookingID = paymentAttrs.metadata?.booking_id;
-        const intentId = event.data.attributes.data.id;
+        const intentId = paymentAttrs.payment_intent_id;;
 
         if (!bookingID) return res.sendStatus(200);
 
@@ -325,6 +325,10 @@ export const handleWebhook = (req, res) => {
                 if (err) {
                     console.error('[Webhook] Payment update error:', err);
                     return res.sendStatus(500);
+                }
+
+                if (result.affectedRows === 0) {
+                    console.warn(`[Webhook] No matching row for bookingID=${bookingID}, intentId=${intentId}`);
                 }
 
                 db.query(

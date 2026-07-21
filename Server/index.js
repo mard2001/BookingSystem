@@ -27,9 +27,12 @@ app.use(cors({
 app.use(cookieParser()); 
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/v1/payments/webhook", express.raw({ type: 'application/json' }));
-
-app.use(express.json());
+app.use((req, res, next) => {
+    if (req.originalUrl === '/api/v1/payments/webhook') {
+        return next();
+    }
+    express.json()(req, res, next);
+});
 
 app.use("/api/v1/users", authRouter);
 app.use("/api/v1/bookings", bookingRouter);

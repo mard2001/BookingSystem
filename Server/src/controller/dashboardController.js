@@ -1,32 +1,39 @@
 import { db, getConnection } from '../connect.js';
+import { getCurrentTimestamp } from '../utils/calculateValues.js';
 import * as response from '../utils/response.js';
 import 'dotenv/config';
 
 export const dashboardStats = (req, res) => {
+    const now = getCurrentTimestamp();
     const queries = [
-        db.promise().query('SELECT COUNT(*) AS totalBookings, SUM(totalAmount) as totalRevenue FROM tbl_bookings WHERE status NOT IN ("deleted","cancelled","pending")'),
+        db.promise().query(`
+            SELECT COUNT(*) AS totalBookings, SUM(totalAmount) as totalRevenue 
+            FROM tbl_bookings 
+            WHERE status NOT IN ("deleted","cancelled","pending")
+                AND YEAR(bookingDate) = YEAR('${now}')
+                AND MONTH(bookingDate) = MONTH('${now}')`),
         db.promise().query('SELECT COUNT(*) AS totalCustomer FROM tbl_accounts WHERE userType = "customer"'),
         db.promise().query('SELECT COUNT(*) AS totalActiveCourts FROM tbl_courts WHERE isActive = 1'),
         db.promise().query(`
             SELECT 
                 COUNT(bs.slotTime) AS bookedHours,
                 (SELECT COUNT(*) FROM tbl_courts WHERE isActive = 1) 
-                    * 14
-                    * DAY(LAST_DAY(NOW())) AS totalAvailableHours,
+                    * 6
+                    * DAY(LAST_DAY('${now}')) AS totalAvailableHours,
                 ROUND(
                     COUNT(bs.slotTime) /  
                     (
                         (SELECT COUNT(*) FROM tbl_courts WHERE isActive = 1) 
-                        * 24 
-                        * DAY(LAST_DAY(NOW()))
+                        * 6 
+                        * DAY(LAST_DAY('${now}'))
                     ) * 100, 2
                 ) AS occupancyRate
             FROM tbl_bookings b
             JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
             WHERE 
                 b.status IN ('confirmed','completed')
-                AND MONTH(b.bookingDate) = MONTH(NOW())
-                AND YEAR(b.bookingDate) = YEAR(NOW());
+                AND MONTH(b.bookingDate) = MONTH('${now}')
+                AND YEAR(b.bookingDate) = YEAR('${now}');
         `),
         db.promise().query(`SELECT 
                                 status,
