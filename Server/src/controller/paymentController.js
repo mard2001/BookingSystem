@@ -295,7 +295,7 @@ export const handleWebhook = (req, res) => {
     try {
         const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')));
         const timestamp = parts['t'];
-        const receivedSig = parts['te'] ?? parts['li'];
+        const receivedSig = parts['li'] || parts['te'];
 
         const rawBody = req.body.toString();
         const computed = crypto
