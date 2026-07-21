@@ -317,6 +317,8 @@ export const handleWebhook = (req, res) => {
             return res.sendStatus(200);
         }
 
+        console.log('[HANDLE WEB HOOK],', intentId);
+
         const now = getCurrentTimestamp();
 
         // Match by payment_intent_id alone — don't rely on metadata being present
