@@ -7,17 +7,42 @@ import { validateFields } from '../utils/validateFields.js';
 import { logActivity } from './logController.js';
 
 export const getAllCourts = (req, res) => {
-    
-    const query = 'SELECT * FROM tbl_courts WHERE isActive != 0';
 
-    db.query(query, (err, data) => {
-        if(err) return response.serverError(res, "Database error", err);
+    const courtsQuery = 'SELECT * FROM tbl_courts WHERE isActive != 0';
+    const slotsQuery = 'SELECT * FROM tbl_time_slots ORDER BY courtID, slotTime ASC';
 
-        return (data.length > 0)?
-            response.ok(res, 'All courts successfully retrieved.', data):
-            response.ok(res, 'No courts found',[]);
-    })
-}
+    db.query(courtsQuery, (err, courts) => {
+        if (err) return response.serverError(res, "Database error", err);
+
+        if (courts.length === 0) {
+            return response.ok(res, 'No courts found', []);
+        }
+
+        db.query(slotsQuery, (err2, slots) => {
+            if (err2) return response.serverError(res, "Database error", err2);
+
+            // Group slots by courtID
+            const slotsByCourtID = slots.reduce((acc, slot) => {
+                if (!acc[slot.courtID]) acc[slot.courtID] = [];
+                acc[slot.courtID].push(slot);
+                return acc;
+            }, {});
+
+            // Attach slots + derived startTime/endTime to each court
+            const data = courts.map(court => {
+                const courtSlots = slotsByCourtID[court.courtID] || [];
+                return {
+                    ...court,
+                    startTime: courtSlots.length > 0 ? courtSlots[0].slotTime : null,
+                    endTime: courtSlots.length > 0 ? courtSlots[courtSlots.length - 1].slotTime : null,
+                    timeSlots: courtSlots
+                };
+            });
+
+            return response.ok(res, 'All courts successfully retrieved.', data);
+        });
+    });
+};
 
 export const getAvailableCourts = (req, res) => {
     const query = 'SELECT * FROM tbl_courts WHERE isActive = 1';
@@ -222,6 +247,33 @@ export const updateCourt = async (req, res) => {
     } finally {
         if (conn) conn.release();
 
+    }
+};
+
+export const updateTimeSlotsBulk = async (req, res) => {
+    const { slots } = req.body;
+
+    if (!Array.isArray(slots) || slots.length === 0) {
+        return response.badRequest(res, "No slots provided.");
+    }
+
+    try {
+        const conn = await getPromiseConnection();
+        await conn.beginTransaction();
+
+        for (const slot of slots) {
+            await conn.query(
+                'UPDATE tbl_time_slots SET isActive = ? WHERE id = ?',
+                [slot.isActive, slot.id]
+            );
+        }
+
+        await conn.commit();
+        conn.release();
+
+        return response.ok(res, 'Time slots updated successfully.', slots);
+    } catch (err) {
+        return response.serverError(res, "Failed to update time slots", err);
     }
 };
 

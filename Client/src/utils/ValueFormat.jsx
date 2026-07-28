@@ -213,4 +213,21 @@ export const timeAgo = (dateString) => {
     return new Intl.DateTimeFormat("en-PH", {timeZone: "Asia/Manila", month: "short", day: "numeric", year: "numeric", }).format(new Date(dateString));
 }
 
+// "14:30" 
+// Date object for today at 14:30
+export const timeStringToDate = (timeStr) => {
+  if (!timeStr) return null;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
 
+// Date object 
+// "14:30" for your state/API
+export const dateToTimeString = (date) => {
+  if (!date) return '';
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+};

@@ -69,6 +69,31 @@
     font-optical-sizing: auto;
     font-style: normal;
   }
+
+  .react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
+.react-datepicker--time-only .react-datepicker__time-container,
+.react-datepicker--time-only .react-datepicker__time-box,
+.react-datepicker__time-list {
+  width: 160px !important;
+}
+
+.react-datepicker-time__header {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.react-datepicker__time-list-item {
+  font-size: 13px;
+  padding: 6px 10px !important;
+}
+
+.react-datepicker__time-list-item--selected {
+  background-color: var(--color-primary, #7f1d1d) !important;
+}
 }
 
 @layer components{

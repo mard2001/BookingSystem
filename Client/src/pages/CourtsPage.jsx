@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { DataTable } from "../components/DataTable";
-import { addCourt, deleteCourt, getCountAvailableCourts, getCountMaintenanceCourts, getCountTotalCourts, getCountUnavailableCourts, getCourts, updateCourt } from "../api/services/courtService";
+import { addCourt, deleteCourt, getCourts, updateCourt, updateTimeSlotsBulk } from "../api/services/courtService";
 import { BanknoteArrowDownIcon, BookOpenTextIcon, CalendarX, CheckCircle2, Clock, EditIcon, InfoIcon, PlusCircle, Ratio, Trash2Icon, Wrench } from "lucide-react";
 import { getExportFilename } from "../utils/ExportTable";
 import { StatsGrid3 } from "../components/StatsGrid3";
@@ -9,7 +9,9 @@ import { toast } from "sonner";
 import { validateForm } from "../utils/ValueValidate";
 import { addCourtRules } from "../Rules/CourtInputRules";
 import { WEEKDAY_PM_START, WEEKEND_PM_START } from "../constants/contants";
-import { formatHour } from "../utils/ValueFormat";
+import { dateToTimeString, formatHour, timeStringToDate } from "../utils/ValueFormat";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export const CourtsPage = () => {
   const [data, setData] = useState([]);
@@ -22,11 +24,13 @@ export const CourtsPage = () => {
   const [courtToDelete, setCourtToDelete] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [courtSlots, setCourtSlots] = useState([]);
+
   const [newCourt, setNewCourt] = useState({
-    courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime:"", endTime:""
+    courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime: "", endTime: ""
   });
   const [editForm, setEditForm] = useState({
-    courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "",
+    courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime: "", endTime: ""
   });
 
   useEffect(() => {
@@ -45,11 +49,13 @@ export const CourtsPage = () => {
     fetchCourts();
   }, []);
 
+  // court.timeSlots now comes pre-attached from getAllCourts — no extra fetch needed
   const handleEdit = (court) => {
     setSelectedCourt(court);
-    setEditForm({ ...court });
-    setFieldErrors({}); 
-    setIsEditing(false); 
+    setEditForm(court);
+    setCourtSlots(court.timeSlots ?? []);
+    setFieldErrors({});
+    setIsEditing(false);
     setModalOpen(true);
   };
 
@@ -58,18 +64,31 @@ export const CourtsPage = () => {
     setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const toggleSlot = (slotID) => {
+    setCourtSlots(prev =>
+      prev.map(s => s.id === slotID ? { ...s, isActive: s.isActive ? 0 : 1 } : s)
+    );
+  };
+
   const handleEditSubmit = async () => {
     const errors = validateForm(editForm, addCourtRules);
     if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors); 
+      setFieldErrors(errors);
       return;
     }
-    
+
     try {
       await updateCourt(selectedCourt.courtID, editForm);
+
+      if (courtSlots.length > 0) {
+        await updateTimeSlotsBulk(
+          courtSlots.map(s => ({ id: s.id, isActive: s.isActive }))
+        );
+      }
+
       setData(prev => prev.map(c =>
         c.courtID === selectedCourt.courtID
-          ? { ...c, ...editForm, isActive: Number(editForm.isActive) }  // ← coerce here
+          ? { ...c, ...editForm, isActive: Number(editForm.isActive), timeSlots: courtSlots }
           : c
       ));
       toast.success("Court updated successfully.");
@@ -85,7 +104,6 @@ export const CourtsPage = () => {
     }
   };
 
-
   const handleDelete = (court) => {
     setCourtToDelete(court);
     setDeleteModalOpen(true);
@@ -93,7 +111,6 @@ export const CourtsPage = () => {
 
   const confirmDelete = async () => {
     try {
-      console.log(courtToDelete.courtID)
       const data = await deleteCourt(courtToDelete.courtID);
       setData(prev => prev.filter(c => c.courtID !== courtToDelete.courtID));
       setDeleteModalOpen(false);
@@ -112,8 +129,8 @@ export const CourtsPage = () => {
   const handleAddCourt = async () => {
     const errors = validateForm(newCourt, addCourtRules);
     if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors); 
-        return;
+      setFieldErrors(errors);
+      return;
     }
 
     try {
@@ -122,7 +139,7 @@ export const CourtsPage = () => {
       setAddModalOpen(false);
       toast.success(added.message);
       setFieldErrors({});
-      setNewCourt({ courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime: "", endTime: "" }); // reset
+      setNewCourt({ courtLabel: "", courtSport: "", courtType: "", courtDesc: "", isActive: 1, rate1: "", rate2: "", rate3: "", rate4: "", startTime: "", endTime: "" });
     } catch (err) {
       toast.error(err.message);
       if (err.errors?.missing) {
@@ -132,8 +149,19 @@ export const CourtsPage = () => {
     }
   };
 
+  // Add-modal picker still uses "HH:mm" strings <-> Date
+  const handleTimeChange = (name, date) => {
+    handleNewCourtChange({ target: { name, value: dateToTimeString(date) } });
+  };
+
+  const formatSlotLabel = (slotTime) => {
+    return new Date(`1970-01-01T${slotTime}`).toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  };
+
   const columns = useMemo(() => [
-    { header: "Court ID",accessorKey: "courtID" },
+    { header: "Court ID", accessorKey: "courtID" },
     {
       header: "Court",
       id: "court",
@@ -145,8 +173,8 @@ export const CourtsPage = () => {
         </div>
       ),
     },
-    { 
-      header: "Type", 
+    {
+      header: "Type",
       accessorKey: "courtType",
       cell: ({ row }) => (
         <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
@@ -172,9 +200,7 @@ export const CourtsPage = () => {
       accessorKey: "rate1",
       cell: ({ getValue }) => {
         const value = parseFloat(getValue()) || 0;
-        return (
-          <span>₱{value.toFixed(2)}</span>
-        );
+        return (<span>₱{value.toFixed(2)}</span>);
       }
     },
     {
@@ -182,9 +208,7 @@ export const CourtsPage = () => {
       accessorKey: "rate2",
       cell: ({ getValue }) => {
         const value = parseFloat(getValue()) || 0;
-        return (
-          <span>₱{value.toFixed(2)}</span>
-        );
+        return (<span>₱{value.toFixed(2)}</span>);
       }
     },
     {
@@ -192,9 +216,7 @@ export const CourtsPage = () => {
       accessorKey: "rate3",
       cell: ({ getValue }) => {
         const value = parseFloat(getValue()) || 0;
-        return (
-          <span>₱{value.toFixed(2)}</span>
-        );
+        return (<span>₱{value.toFixed(2)}</span>);
       }
     },
     {
@@ -202,9 +224,7 @@ export const CourtsPage = () => {
       accessorKey: "rate4",
       cell: ({ getValue }) => {
         const value = parseFloat(getValue()) || 0;
-        return (
-          <span>₱{value.toFixed(2)}</span>
-        );
+        return (<span>₱{value.toFixed(2)}</span>);
       }
     },
     {
@@ -212,15 +232,12 @@ export const CourtsPage = () => {
       accessorKey: "isActive",
       cell: ({ getValue }) => {
         const status = getValue();
-
         const statusMap = {
           1: { label: "Available", style: "bg-green-100 text-green-700" },
           0: { label: "Under Maintenance", style: "bg-yellow-100 text-yellow-700" },
           2: { label: "Unavailable", style: "bg-red-100 text-red-700" },
         };
-
         const { label, style } = statusMap[status] ?? { label: "Unknown", style: "bg-gray-100 text-gray-600" };
-
         return (
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${style}`}>
             {label}
@@ -265,14 +282,14 @@ export const CourtsPage = () => {
             <p className="text-2xl sm:text-3xl font-bold text-primary">Courts</p>
             <p className="text-sm text-secondary">Manage all facilities, types, and dynamic pricing rules</p>
           </div>
-          <button onClick={() => {setFieldErrors({}); setAddModalOpen(true)}}
+          <button onClick={() => { setFieldErrors({}); setAddModalOpen(true) }}
             className="flex items-center justify-center w-full sm:w-auto px-6 sm:px-10 py-2 text-xs bg-tertiary text-white rounded-lg hover:bg-primary/90 hover:cursor-pointer">
             <PlusCircle className="w-5 h-5 mr-2" /> Add New Court
           </button>
         </div>
 
         <StatsGrid3 items={stats} maxCols={4} />
-        
+
         <DataTable
           data={data}
           columns={columns}
@@ -286,14 +303,16 @@ export const CourtsPage = () => {
         />
       </div>
 
+      <div id="datepicker-portal"></div>
+
+      {/* Add Court Modal */}
       <Modal open={addModalOpen} onClose={() => setAddModalOpen(false)} size="lg">
         <div>
           <h2 className="text-xl font-bold text-primary mb-1">Add New Court</h2>
           <p className="text-sm text-secondary mb-6">Fill in the details to register a new court.</p>
 
-          <hr className='max-md mb-5 text-secondary/30'/>
+          <hr className='max-md mb-5 text-secondary/30' />
           <div className="space-y-5">
-            {/* Court Label & Sport */}
             <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BookOpenTextIcon className="w-5 h-5 text-primary" /> Basic Court Information</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -305,9 +324,9 @@ export const CourtsPage = () => {
                   onChange={handleNewCourtChange}
                   placeholder="e.g. Court A"
                   className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${fieldErrors.courtLabel 
-                        ? "border-red-500 focus:ring-red-300" 
-                        : "border-gray-200 focus:ring-primary/30"
+                    ${fieldErrors.courtLabel
+                      ? "border-red-500 focus:ring-red-300"
+                      : "border-gray-200 focus:ring-primary/30"
                     }`}
                 />
                 {fieldErrors.courtLabel && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtLabel} </span>)}
@@ -321,27 +340,26 @@ export const CourtsPage = () => {
                   onChange={handleNewCourtChange}
                   placeholder="e.g. Badminton"
                   className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${fieldErrors.courtSport 
-                        ? "border-red-500 focus:ring-red-300" 
-                        : "border-gray-200 focus:ring-primary/30"
+                    ${fieldErrors.courtSport
+                      ? "border-red-500 focus:ring-red-300"
+                      : "border-gray-200 focus:ring-primary/30"
                     }`}
                 />
                 {fieldErrors.courtSport && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtSport} </span>)}
               </div>
             </div>
 
-            {/* Type & Status */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Type</label>
-                <select 
+                <select
                   name="courtType"
                   value={newCourt.courtType}
                   onChange={handleNewCourtChange}
                   className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${fieldErrors.courtType 
-                        ? "border-red-500 focus:ring-red-300" 
-                        : "border-gray-200 focus:ring-primary/30"
+                    ${fieldErrors.courtType
+                      ? "border-red-500 focus:ring-red-300"
+                      : "border-gray-200 focus:ring-primary/30"
                     }`}
                 >
                   <option value="">Select type...</option>
@@ -352,16 +370,16 @@ export const CourtsPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Status</label>
-                <select 
-                name="isActive"
+                <select
+                  name="isActive"
                   value={newCourt.isActive}
                   onChange={handleNewCourtChange}
                   className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${fieldErrors.isActive 
-                        ? "border-red-500 focus:ring-red-300" 
-                        : "border-gray-200 focus:ring-primary/30"
+                    ${fieldErrors.isActive
+                      ? "border-red-500 focus:ring-red-300"
+                      : "border-gray-200 focus:ring-primary/30"
                     }`}
-                  >
+                >
                   <option value={1}>Available</option>
                   <option value={0}>Under Maintenance</option>
                   <option value={2}>Unavailable</option>
@@ -370,7 +388,6 @@ export const CourtsPage = () => {
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Description</label>
               <textarea
@@ -380,55 +397,68 @@ export const CourtsPage = () => {
                 rows={3}
                 placeholder="Brief description of the court..."
                 className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none
-                  ${fieldErrors.courtDesc 
-                      ? "border-red-500 focus:ring-red-300" 
-                      : "border-gray-200 focus:ring-primary/30"
+                  ${fieldErrors.courtDesc
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-200 focus:ring-primary/30"
                   }`}
               />
               {fieldErrors.courtDesc && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtDesc} </span>)}
             </div>
 
-            {/* Operating Hours */}
+            {/* Operating Hours — range picker (new court has no slots yet) */}
             <p className="text-xs font-bold flex items-center gap-1 mb-2"> <Clock className="w-5 h-5 text-primary" /> Operating Hours</p>
             <div className="border-1 border-gray-200 p-3 rounded-lg">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Start Time</label>
-                  <input
-                    type="time"
-                    name="startTime"
-                    value={newCourt.startTime}
-                    onChange={handleNewCourtChange}
-                    placeholder="e.g. Badminton"
-                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                      ${fieldErrors.startTime 
-                          ? "border-red-500 focus:ring-red-300" 
-                          : "border-gray-200 focus:ring-primary/30"
+                  <DatePicker
+                    selected={timeStringToDate(newCourt.startTime)}
+                    onChange={(date) => handleTimeChange('startTime', date)}
+                    showTimeSelect
+                    showTimeSelectOnly
+                    timeIntervals={60}
+                    timeCaption="Choose a Time"
+                    dateFormat="h:mm aa"
+                    placeholderText="Select start time"
+                    wrapperClassName="w-full"
+                    portalId="datepicker-portal"
+                    popperPlacement="bottom-start"
+                    popperClassName="z-[9999]"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2
+                      ${fieldErrors.startTime
+                        ? "border-red-500 focus:ring-red-300"
+                        : "border-gray-200 focus:ring-primary/30"
                       }`}
                   />
                   {fieldErrors.startTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.startTime} </span>)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">End Time</label>
-                  <input
-                    type="time"
-                    name="endTime"
-                    value={newCourt.endTime}
-                    onChange={handleNewCourtChange}
-                    placeholder="e.g. Badminton"
-                    className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                      ${fieldErrors.endTime 
-                          ? "border-red-500 focus:ring-red-300" 
-                          : "border-gray-200 focus:ring-primary/30"
+                  <DatePicker
+                    selected={timeStringToDate(newCourt.endTime)}
+                    onChange={(date) => handleTimeChange('endTime', date)}
+                    showTimeSelect
+                    showTimeSelectOnly
+                    timeIntervals={60}
+                    timeCaption="Choose a Time"
+                    dateFormat="h:mm aa"
+                    placeholderText="Select start time"
+                    wrapperClassName="w-full"
+                    portalId="datepicker-portal"
+                    popperPlacement="bottom-start"
+                    popperClassName="z-[9999]"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2
+                      ${fieldErrors.startTime
+                        ? "border-red-500 focus:ring-red-300"
+                        : "border-gray-200 focus:ring-primary/30"
                       }`}
                   />
                   {fieldErrors.endTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.endTime} </span>)}
                 </div>
               </div>
-              <span className="flex items-center text-[10px] text-secondary mt-1"><InfoIcon className="w-3 h-3 mr-1" /> These hours apply to all days of the week by default.</span>
+              <span className="flex items-center text-[10px] text-secondary mt-1"><InfoIcon className="w-3 h-3 mr-1" /> Hourly slots will be generated for this range once the court is created.</span>
             </div>
 
-            {/* Rates */}
             <div>
               <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BanknoteArrowDownIcon className="w-5 h-5 text-primary" /> Pricing Rates</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -437,7 +467,6 @@ export const CourtsPage = () => {
                   { label: `Weekday PM (from ${formatHour(WEEKDAY_PM_START)})`, key: "rate2" },
                   { label: `Weekend AM`, key: "rate3" },
                   { label: `Weekend PM (from ${formatHour(WEEKEND_PM_START)})`, key: "rate4" },
-                  
                 ].map(rate => (
                   <div key={rate.key}>
                     <label className="block text-xs text-gray-400 mb-1">{rate.label}</label>
@@ -450,9 +479,9 @@ export const CourtsPage = () => {
                         onChange={handleNewCourtChange}
                         placeholder="0.00"
                         className={`w-full pl-7 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                          ${fieldErrors[rate.key] 
-                              ? "border-red-500 focus:ring-red-300" 
-                              : "border-gray-200 focus:ring-primary/30"
+                          ${fieldErrors[rate.key]
+                            ? "border-red-500 focus:ring-red-300"
+                            : "border-gray-200 focus:ring-primary/30"
                           }`}
                       />
                     </div>
@@ -462,7 +491,6 @@ export const CourtsPage = () => {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="border-t border-gray-100 pt-4 flex justify-end gap-3">
               <button
                 onClick={() => setAddModalOpen(false)}
@@ -477,11 +505,11 @@ export const CourtsPage = () => {
                 Save Court
               </button>
             </div>
-
           </div>
         </div>
       </Modal>
 
+      {/* Court Details / Edit Modal */}
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); setIsEditing(false); }} size="lg">
         {selectedCourt && (
           <div>
@@ -502,7 +530,7 @@ export const CourtsPage = () => {
               {isEditing ? "Update the details for this court." : "Check court specifications, rates, and availability"}
             </p>
 
-            <hr className='max-md mb-5 text-secondary/30'/>
+            <hr className='max-md mb-5 text-secondary/30' />
             <div className="space-y-5">
               <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BookOpenTextIcon className="w-5 h-5 text-primary" /> Basic Court Information</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -510,33 +538,33 @@ export const CourtsPage = () => {
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Label</label>
                   <input type="text" name="courtLabel" value={editForm.courtLabel} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
                     className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${isEditing && fieldErrors.courtLabel 
-                        ? "border-red-500 focus:ring-red-300" 
+                    ${isEditing && fieldErrors.courtLabel
+                        ? "border-red-500 focus:ring-red-300"
                         : "border-gray-200 focus:ring-primary/30"
-                    }`} />
-                    {isEditing && fieldErrors.courtLabel && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtLabel} </span>)}
+                      }`} />
+                  {isEditing && fieldErrors.courtLabel && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtLabel} </span>)}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Sport</label>
                   <input type="text" name="courtSport" value={editForm.courtSport} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
                     className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${isEditing && fieldErrors.courtSport 
-                        ? "border-red-500 focus:ring-red-300" 
+                    ${isEditing && fieldErrors.courtSport
+                        ? "border-red-500 focus:ring-red-300"
                         : "border-gray-200 focus:ring-primary/30"
-                    }`} />
-                    {isEditing && fieldErrors.courtSport && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtSport} </span>)}
+                      }`} />
+                  {isEditing && fieldErrors.courtSport && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtSport} </span>)}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Court Type</label>
-                  <select name="courtType" value={editForm.courtType} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
+                  <select name="courtType" value={editForm.courtType} onChange={handleEditChange} disabled={!isEditing}
                     className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${isEditing && fieldErrors.courtType 
-                        ? "border-red-500 focus:ring-red-300" 
+                    ${isEditing && fieldErrors.courtType
+                        ? "border-red-500 focus:ring-red-300"
                         : "border-gray-200 focus:ring-primary/30"
-                    }`}>
+                      }`}>
                     <option value="">Select type...</option>
                     <option value="Indoor">Indoor</option>
                     <option value="Outdoor">Outdoor</option>
@@ -545,12 +573,12 @@ export const CourtsPage = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Status</label>
-                  <select name="isActive" value={editForm.isActive} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
+                  <select name="isActive" value={editForm.isActive} onChange={handleEditChange} disabled={!isEditing}
                     className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                    ${isEditing && fieldErrors.isActive 
-                        ? "border-red-500 focus:ring-red-300" 
+                    ${isEditing && fieldErrors.isActive
+                        ? "border-red-500 focus:ring-red-300"
                         : "border-gray-200 focus:ring-primary/30"
-                    }`}>
+                      }`}>
                     <option value={1}>Available</option>
                     <option value={0}>Under Maintenance</option>
                     <option value={2}>Unavailable</option>
@@ -563,56 +591,55 @@ export const CourtsPage = () => {
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Description</label>
                 <textarea name="courtDesc" value={editForm.courtDesc} onChange={handleEditChange} rows={3} readOnly={!isEditing} disabled={!isEditing}
                   className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none
-                    ${isEditing && fieldErrors.courtDesc 
-                        ? "border-red-500 focus:ring-red-300" 
-                        : "border-gray-200 focus:ring-primary/30"
+                    ${isEditing && fieldErrors.courtDesc
+                      ? "border-red-500 focus:ring-red-300"
+                      : "border-gray-200 focus:ring-primary/30"
                     }`} />
-                  {isEditing && fieldErrors.courtDesc && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtDesc} </span>)}
+                {isEditing && fieldErrors.courtDesc && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.courtDesc} </span>)}
               </div>
 
-              {/* Operating Hours */}
+              {/* Operating Hours — per-slot toggle switches */}
+              {/* Operating Hours — per-slot toggle switches */}
               <p className="text-xs font-bold flex items-center gap-1 mb-2"> <Clock className="w-5 h-5 text-primary" /> Operating Hours</p>
               <div className="border-1 border-gray-200 p-3 rounded-lg">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Start Time</label>
-                    <input
-                      type="time"
-                      name="startTime"
-                      value={editForm.startTime}
-                      onChange={handleEditChange}
-                      readOnly={!isEditing} disabled={!isEditing}
-                      className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                        ${isEditing && fieldErrors.startTime 
-                            ? "border-red-500 focus:ring-red-300" 
-                            : "border-gray-200 focus:ring-primary/30"
-                        }`}
-                    />
-                    {isEditing && fieldErrors.startTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.startTime} </span>)}
+                {courtSlots.length === 0 ? (
+                  <p className="text-xs text-gray-400">No time slots configured for this court.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3">
+                    {courtSlots.map(slot => (
+                      <div
+                        key={slot.id}
+                        className="flex items-center gap-3 py-1"
+                      >
+                        <span className={`text-xs w-14 shrink-0 ${slot.isActive ? "text-gray-700 font-medium" : "text-gray-400"}`}>
+                          {formatSlotLabel(slot.slotTime)}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() => toggleSlot(slot.id)}
+                          role="switch"
+                          aria-checked={!!slot.isActive}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0
+                            ${slot.isActive ? "bg-green-700" : "bg-gray-300"}
+                            ${isEditing ? "hover:cursor-pointer" : "cursor-default opacity-70"}
+                          `}
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform
+                              ${slot.isActive ? "translate-x-5" : "translate-x-1"}
+                            `}
+                          />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">End Time</label>
-                    <input
-                      type="time"
-                      name="endTime"
-                      value={editForm.endTime}
-                      onChange={handleEditChange}
-                      readOnly={!isEditing} disabled={!isEditing}
-                      className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
-                        ${isEditing && fieldErrors.endTime 
-                            ? "border-red-500 focus:ring-red-300" 
-                            : "border-gray-200 focus:ring-primary/30"
-                        }`}
-                    />
-                    {isEditing && fieldErrors.endTime && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors.endTime} </span>)}
-                  </div>
-                </div>
-                <span className="flex items-center text-[10px] text-secondary mt-1"><InfoIcon className="w-3 h-3 mr-1" /> These hours apply to all days of the week by default.</span>
+                )}
+                <span className="flex items-center text-[10px] text-secondary mt-2"><InfoIcon className="w-3 h-3 mr-1" /> {isEditing ? "Toggle a slot on or off to control availability." : "Green toggles indicate slots available for booking."}</span>
               </div>
 
               <div>
                 <p className="text-xs font-bold flex items-center gap-1 mb-2"> <BanknoteArrowDownIcon className="w-5 h-5 text-primary" /> Pricing Rates</p>
-
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: "Weekday AM", key: "rate1" },
@@ -627,8 +654,8 @@ export const CourtsPage = () => {
                         <input type="number" name={rate.key} value={editForm[rate.key]} onChange={handleEditChange} readOnly={!isEditing} disabled={!isEditing}
                           className={`w-full pl-7 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30
                             ${isEditing && fieldErrors[rate.key]
-                                ? "border-red-500 focus:ring-red-300" 
-                                : "border-gray-200 focus:ring-primary/30"
+                              ? "border-red-500 focus:ring-red-300"
+                              : "border-gray-200 focus:ring-primary/30"
                             }`} />
                         {isEditing && fieldErrors[rate.key] && (<span className='text-red-500 text-[10px] ml-3 font-normal normal-case tracking-normal'>*{fieldErrors[rate.key]} </span>)}
                       </div>
@@ -640,7 +667,7 @@ export const CourtsPage = () => {
               <div className="border-t border-gray-100 pt-4 flex justify-end gap-3">
                 {isEditing ? (
                   <>
-                    <button onClick={() => {setIsEditing(false); setEditForm(selectedCourt); setFieldErrors({});}}
+                    <button onClick={() => { setIsEditing(false); setEditForm(selectedCourt); setCourtSlots(selectedCourt.timeSlots ?? []); setFieldErrors({}); }}
                       className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer">
                       Cancel
                     </button>
@@ -649,19 +676,19 @@ export const CourtsPage = () => {
                       Save Changes
                     </button>
                   </>
-                ):(
+                ) : (
                   <button onClick={() => { setModalOpen(false); setIsEditing(false); }}
                     className="px-5 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:cursor-pointer">
                     Close
                   </button>
                 )}
-                
               </div>
             </div>
           </div>
         )}
       </Modal>
 
+      {/* Delete Confirmation Modal */}
       <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} size="sm">
         {courtToDelete && (
           <div className="text-center">

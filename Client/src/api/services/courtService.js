@@ -126,3 +126,13 @@ export async function deleteClosure(closureID) {
         throw error;
     }
 }
+
+export async function updateTimeSlotsBulk(slots) {
+    try {
+        const response = await api.put("/api/v1/courts/timeslots/bulk", { slots });
+        return response;
+    } catch (error) {
+        console.error("Update time slots failed:", error);
+        throw error;
+    }
+}

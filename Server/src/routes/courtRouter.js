@@ -1,5 +1,5 @@
 import express from "express";
-import { createNewClosure, createNewCourt, deleteClosure, deleteCourt, externalInsertDefaultTimeSlots, getAllClosure, getAllCourts, getAvailableCourts, getCountAvailableCourts, getCountMaintenanceCourts, getCountTotalCourts, getCountUnavailableCourts, updateCourt } from "../controller/courtController.js";
+import { createNewClosure, createNewCourt, deleteClosure, deleteCourt, externalInsertDefaultTimeSlots, getAllClosure, getAllCourts, getAvailableCourts, getCountAvailableCourts, getCountMaintenanceCourts, getCountTotalCourts, getCountUnavailableCourts, updateCourt, updateTimeSlotsBulk } from "../controller/courtController.js";
 import { genericMiddleware } from "../middleware/authenticate.js";
 
 
@@ -17,6 +17,7 @@ courtRouter.post('/add/new',genericMiddleware, createNewCourt);
 courtRouter.post('/add/new-closure', genericMiddleware, createNewClosure);
 courtRouter.post('/add/new/timeslot/:courtID', externalInsertDefaultTimeSlots);
 courtRouter.put('/update/:courtID', genericMiddleware, updateCourt);
+courtRouter.put('/timeslots/bulk', updateTimeSlotsBulk);
 courtRouter.put('/delete/:courtID', genericMiddleware, deleteCourt);
 courtRouter.put('/delete-closure/:closureID', genericMiddleware, deleteClosure);
 
