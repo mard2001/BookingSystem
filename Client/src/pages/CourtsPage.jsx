@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { DataTable } from "../components/DataTable";
-import { addCourt, deleteCourt, getCourts, updateCourt, updateTimeSlotsBulk } from "../api/services/courtService";
+import { addCourt, deleteCourt, getCourts, reorderCourts, updateCourt, updateTimeSlotsBulk } from "../api/services/courtService";
 import { BanknoteArrowDownIcon, BookOpenTextIcon, CalendarX, CheckCircle2, Clock, EditIcon, InfoIcon, PlusCircle, Ratio, Trash2Icon, Wrench } from "lucide-react";
 import { getExportFilename } from "../utils/ExportTable";
 import { StatsGrid3 } from "../components/StatsGrid3";
@@ -161,7 +161,7 @@ export const CourtsPage = () => {
   };
 
   const columns = useMemo(() => [
-    { header: "Court ID", accessorKey: "courtID" },
+    // { header: "Court ID", accessorKey: "courtID" },
     {
       header: "Court",
       id: "court",
@@ -274,6 +274,17 @@ export const CourtsPage = () => {
     { icon: Wrench, iconColor: "text-[#FFA500]", gradient: "from-[#FFA500]/20 to-[#FFA500]/10", label: "Under Maintenance", value: data.filter(c => c.isActive === 0).length },
   ], [data]);
 
+  const handleReorderCourts = async (reorderedCourts) => {
+    setData(reorderedCourts);
+    try {
+      await reorderCourts(
+        reorderedCourts.map((court, index) => ({ courtID: court.courtID, courtSortOrder: index }))
+      );
+    } catch (err) {
+      toast.error("Failed to save new court order.");
+    }
+  };
+
   return (
     <>
       <div>
@@ -300,6 +311,9 @@ export const CourtsPage = () => {
           exportable={true}
           exportFilename={getExportFilename("courts")}
           onRowClick={(rowData) => handleEdit(rowData)}
+          enableRowReorder={true}
+          getRowId={(court) => court.courtID}
+          onReorderRows={handleReorderCourts}
         />
       </div>
 

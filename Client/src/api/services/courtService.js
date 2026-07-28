@@ -136,3 +136,13 @@ export async function updateTimeSlotsBulk(slots) {
         throw error;
     }
 }
+
+export async function reorderCourts(courts) {
+    try {
+        const response = await api.put("/api/v1/courts/reorder", { courts });
+        return response;
+    } catch (error) {
+        console.error("Reorder courts failed:", error);
+        throw error;
+    }
+}

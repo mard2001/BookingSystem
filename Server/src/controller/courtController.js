@@ -8,7 +8,7 @@ import { logActivity } from './logController.js';
 
 export const getAllCourts = (req, res) => {
 
-    const courtsQuery = 'SELECT * FROM tbl_courts WHERE isActive != 0';
+    const courtsQuery = 'SELECT * FROM tbl_courts WHERE isActive != 0 ORDER BY courtSortOrder';
     const slotsQuery = 'SELECT * FROM tbl_time_slots ORDER BY courtID, slotTime ASC';
 
     db.query(courtsQuery, (err, courts) => {
@@ -163,7 +163,7 @@ export const createNewCourt = async (req, res) => {
     if (!validateFields(req, res, [
         'courtLabel', 'courtSport', 'courtType', 'courtDesc', 'isActive', 'rate1', 'rate2', 'rate3', 'rate4', 'startTime', 'endTime'
     ])) return;
-    
+
     const { courtLabel, courtSport, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, startTime, endTime } = req.body;
 
     let conn;
@@ -171,10 +171,15 @@ export const createNewCourt = async (req, res) => {
         conn = await getPromiseConnection();
         await conn.beginTransaction();
 
+        const [orderResult] = await conn.query(
+            'SELECT COALESCE(MAX(courtSortOrder), 0) AS maxOrder FROM tbl_courts'
+        );
+        const nextSortOrder = orderResult[0].maxOrder + 1;
+
         const [result] = await conn.query(
-            `INSERT INTO tbl_courts (courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, updatedAt, createdAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [courtSport, courtLabel, courtType, courtDesc, isActive, rate1, rate2, rate3, rate4, getCurrentTimestamp(), getCurrentTimestamp()]
+            `INSERT INTO tbl_courts (courtSport, courtLabel, courtType, courtDesc, courtSortOrder, isActive, rate1, rate2, rate3, rate4, updatedAt, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [courtSport, courtLabel, courtType, courtDesc, nextSortOrder, isActive, rate1, rate2, rate3, rate4, getCurrentTimestamp(), getCurrentTimestamp()]
         );
 
         await insertTimeSlots(conn, result.insertId, startTime, endTime);
@@ -190,6 +195,7 @@ export const createNewCourt = async (req, res) => {
 
         return response.ok(res, "Court created successfully.", {
             courtID: result.insertId,
+            courtSortOrder: nextSortOrder,
             ...req.body
         });
     } catch (err) {
@@ -274,6 +280,33 @@ export const updateTimeSlotsBulk = async (req, res) => {
         return response.ok(res, 'Time slots updated successfully.', slots);
     } catch (err) {
         return response.serverError(res, "Failed to update time slots", err);
+    }
+};
+
+export const reorderCourts = async (req, res) => {
+    const { courts } = req.body;
+
+    if (!Array.isArray(courts) || courts.length === 0) {
+        return response.badRequest(res, "No courts provided.");
+    }
+
+    try {
+        const conn = await getPromiseConnection();
+        await conn.beginTransaction();
+
+        for (const court of courts) {
+            await conn.query(
+                'UPDATE tbl_courts SET courtSortOrder = ? WHERE courtID = ?',
+                [court.courtSortOrder, court.courtID]
+            );
+        }
+
+        await conn.commit();
+        conn.release();
+
+        return response.ok(res, 'Court order updated successfully.', courts);
+    } catch (err) {
+        return response.serverError(res, "Failed to update court order", err);
     }
 };
 
