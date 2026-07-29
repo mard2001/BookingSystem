@@ -1,9 +1,9 @@
-import { Banknote, BanknoteArrowDownIcon, CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, PlusCircle, SkipForwardIcon, User2, XCircleIcon } from 'lucide-react';
+import { Banknote, BanknoteArrowDownIcon, CalendarArrowDown, CalendarCheck2Icon, CalendarCheckIcon, CalendarDays, CalendarSync, CalendarX, Edit2Icon, Mail, Phone, PlusCircle, SkipForwardIcon, User, User2, XCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo } from 'react'
 import { useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { getExportFilename } from '../utils/ExportTable';
-import { createRegularBooking, editRegularBooking, fetchOfferedSlots, getCancelWholeRegularSched, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
+import { addNextBooking, createRegularBooking, editRegularBooking, fetchOfferedSlots, getCancelWholeRegularSched, getRegularBookings, getRegularSchedFutureBookings } from '../api/services/bookingService';
 import { Modal } from '../components/Modal';
 import { getAvailableCourts, getCourts } from '../api/services/courtService';
 import { getAllActiveCustomers } from '../api/services/usersService';
@@ -388,6 +388,18 @@ export const RegularReservationPage = () => {
             return updated;
         });
     }
+
+    const handleAddNextBooking = async () => {
+        try {
+            const res = await addNextBooking(selectedBookingData.scheduleID);
+            toast.success(res.message);
+
+            const newBookingData = await getRegularSchedFutureBookings(selectedBookingData.scheduleID);
+            setSelectedBookingData(newBookingData.data);
+        } catch (err) {
+            toast.error(err.message ?? "Could not add the next booking.");
+        }
+    };
     
     return (
         <>
@@ -673,7 +685,7 @@ export const RegularReservationPage = () => {
                         <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
                             <div className='order-2 md:order-1 md:col-span-3'>
                                 <h4 className='text-xs text-secondary mb-2.5'>Upcoming Bookings</h4>
-                                <div className='overflow-y-auto'>
+                                <div className='overflow-y-auto max-h-[500px] pr-1'>
                                     {selectedBookingData.bookings.length > 0 ? 
                                         selectedBookingData.bookings.map((upcomingBooking) => {
                                             const bookingDate= new Date(upcomingBooking.bookingDate);
@@ -732,6 +744,36 @@ export const RegularReservationPage = () => {
                                 </div>
                             </div>
                             <div className='order-1 md:order-2'>
+                                <div className="">
+                                    <p className="text-xs text-secondary">Booker Information</p>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <User className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.bookings[0]?.bookerFullName}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Booker Name</span>
+                                        </div>
+                                    </div>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <Mail className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.bookings[0]?.bookerEmail}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Booker Email</span>
+                                        </div>
+                                    </div>
+                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                        <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
+                                            <Phone className='w-5 h-5 text-primary-lighter' />
+                                        </div>
+                                        <div className='flex flex-col'>
+                                            <span className='text-primary text-sm font-bold'>{selectedBookingData.bookings[0]?.bookerContactNumber}</span>
+                                            <span className='text-secondary text-xs -mt-1'>Contact Number</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className='mb-5'>
                                     <h4 className='text-xs text-secondary'>Schedule Summary</h4>
                                     <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
@@ -761,7 +803,7 @@ export const RegularReservationPage = () => {
                                             <span className='text-secondary text-xs -mt-1'>End Date</span>
                                         </div>
                                     </div>
-                                    <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
+                                    {/* <div className='flex flex-row gap-x-3 border-1 border-secondary/30 p-2 rounded-lg my-2 shadow-lg inset-shadow-sm'>
                                         <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-lg'>
                                             <Banknote className='w-5 h-5 text-primary-lighter' />
                                         </div>
@@ -778,7 +820,7 @@ export const RegularReservationPage = () => {
                                             <span className='text-primary text-sm font-bold capitalize'>{selectedBookingData.paymentStatus}</span>
                                             <span className='text-secondary text-xs -mt-1'>Payment Status</span>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <div className='mb-5'>
                                     <h4 className='text-xs text-secondary mb-2'>Quick Actions</h4>
@@ -794,7 +836,13 @@ export const RegularReservationPage = () => {
                                     </button> */}
 
                                     <hr className='max-md mb-2 text-secondary/50'/>
-                                    
+                                    <button
+                                        onClick={handleAddNextBooking}
+                                        disabled={selectedBookingData.status == 'cancelled'}
+                                        className='mb-2 bg-blue-100 text-blue-700 flex items-center justify-center p-2 w-full rounded-lg border-1 border-blue-200 hover:text-blue-500 hover:bg-blue-300 hover:cursor-pointer transition-all duration-300 disabled:bg-red-100 disabled:text-red-300 disabled:border-red-100 disabled:cursor-not-allowed disabled:hover:bg-red-100 disabled:hover:text-red-300'
+                                        >
+                                        <PlusCircle className='w-4 h-4 mr-3' /> <span className='text-xs'>Add Next Booking on Schedule</span>
+                                    </button>
                                     <button
                                         disabled={selectedBookingData.status == 'cancelled'}
                                         onClick={() => handleSchedCancellation(selectedBookingData.id)} 

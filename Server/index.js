@@ -10,7 +10,7 @@ import dashboardRouter from './src/routes/dashboardRouter.js';
 import logRouter from './src/routes/logRouter.js';
 import { expireOverduePayments } from './src/jobs/cron/expirePayments.js';
 import cron from 'node-cron';
-import { completeBookings, pendingBookingsExceededAllocatedTime } from './src/jobs/cron/bookings.js';
+import { completeBookings, extendActiveRecurringSchedules, pendingBookingsExceededAllocatedTime } from './src/jobs/cron/bookings.js';
 
 
 const app = express();
@@ -66,6 +66,16 @@ cron.schedule('*/5 * * * *', async () => { //Runs Every 5 Mins.
 cron.schedule('0 0 * * *', async () => { //Runs every day at 12:00 AM PH time
     try {
         await completeBookings();
+    } catch (err) {
+        console.error('[CRON] Unexpected error:', err);
+    }
+}, {
+    timezone: 'Asia/Manila'
+});
+
+cron.schedule('0 1 * * 1', async () => { // Runs every Monday at 1:00 AM PH time
+    try {
+        await extendActiveRecurringSchedules();
     } catch (err) {
         console.error('[CRON] Unexpected error:', err);
     }

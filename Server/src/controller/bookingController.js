@@ -717,21 +717,13 @@ const checkDatesAvailability = async (conn, courtID, dates, slots) => {
     return unavailable;
 };
 
-export const generateBookingsForSchedule = async (scheduleID) => {
+export const generateBookingsForDates = async (schedule, targetDates) => {
     const conn = await getPromiseConnection();
     try {
-        const [rows] = await conn.query(`
-            SELECT * FROM tbl_recurring_schedules WHERE scheduleID = ?
-        `, [scheduleID]);
-
-        if (rows.length === 0) throw new Error('Schedule not found.');
-        const schedule = rows[0];
-
-        const targetDates = getUpcomingDates(schedule, 4);
-
         let generated = 0;
         let skipped = 0;
         const skippedDates = [];
+
         // Fetch user details once — not inside the date loop
         const [userRows] = await conn.query(`
             SELECT a.id, ud.firstName, ud.lastName, a.email, ud.contactNumber
@@ -760,6 +752,7 @@ export const generateBookingsForSchedule = async (scheduleID) => {
             }
 
             const slots = generateSlots(schedule.startTime, schedule.endTime);
+
             // 2. Check if already generated
             const [existing] = await conn.query(`
                 SELECT bs.slotTime
@@ -768,7 +761,7 @@ export const generateBookingsForSchedule = async (scheduleID) => {
                 WHERE b.scheduleID = ?
                 AND b.bookingDate = ?
                 AND bs.slotTime IN (?)
-            `, [scheduleID, date, slots]);
+            `, [schedule.scheduleID, date, slots]);
 
             if (existing.length > 0) {
                 skipped++;
@@ -807,11 +800,11 @@ export const generateBookingsForSchedule = async (scheduleID) => {
                 await conn.query(`
                     INSERT INTO tbl_bookings
                         (bookingID, scheduleID, courtID, accountID, bookingDate,
-                         bookerFullName, bookerEmail, bookerContactNumber,
-                         totalAmount, paymentMethod, status, createdAt, updatedAt)
+                        bookerFullName, bookerEmail, bookerContactNumber,
+                        totalAmount, paymentMethod, status, createdAt, updatedAt)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'court', 'confirmed', ?, ?)
                 `, [
-                    bookingID, schedule.id, schedule.courtID, user.id, date, 
+                    bookingID, schedule.scheduleID, schedule.courtID, user.id, date,
                     bookerFullName, user.email, user.contactNumber,
                     schedule.totalAmount, now, now
                 ]);
@@ -836,6 +829,25 @@ export const generateBookingsForSchedule = async (scheduleID) => {
     } finally {
         conn.release();
     }
+};
+
+export const generateBookingsForSchedule = async (scheduleID, occurrenceCount = 4) => {
+    const conn = await getPromiseConnection();
+    let schedule;
+
+    try {
+        const [rows] = await conn.query(`
+            SELECT * FROM tbl_recurring_schedules WHERE scheduleID = ?
+        `, [scheduleID]);
+
+        if (rows.length === 0) throw new Error('Schedule not found.');
+        schedule = rows[0];
+    } finally {
+        conn.release();
+    }
+
+    const targetDates = getUpcomingDates(schedule, occurrenceCount);
+    return generateBookingsForDates(schedule, targetDates);
 };
 
 export const createRecurringSched = async (req, res) => {
@@ -946,9 +958,9 @@ export const createRecurringSched = async (req, res) => {
 
         logActivity({
             userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
-            metadata: { bookingID, bookingDate, frequency, dayOfWeek, startTime, endTime, startDate, endDate, },
+            metadata: { scheduleIDs: createdSchedules.map(s => s.scheduleID), frequency, dayOfWeek, startTime, endTime, startDate, endDate },
             action: 'BOOKING_ADDED', entityType: 'BOOKING_MODULE',
-            description: `${req.user?.fullname ?? 'Someone'} addded regular booking.`
+            description: `${req.user?.fullname ?? 'Someone'} added regular booking.`
         });
 
         return response.ok(res, 'Recurring schedule created successfully.', createdSchedules);
@@ -1001,7 +1013,7 @@ export const getRecurringBookingData = (req, res) => {
             c.courtSport, c.courtLabel, c.courtType
 
         FROM tbl_recurring_schedules rs
-        JOIN tbl_bookings b ON rs.id = b.scheduleID
+        JOIN tbl_bookings b ON rs.scheduleID = b.scheduleID
         JOIN tbl_booking_slots bs ON b.bookingID = bs.bookingID
         JOIN tbl_courts c ON c.courtID = rs.courtID
         WHERE rs.scheduleID = ?
@@ -1074,7 +1086,7 @@ export const getRecurringBookingData = (req, res) => {
 
 export const cancelRegularAllBooking = async (req, res) => {
     if (!req.params.scheduleID) return response.badRequest(res, "Schedule ID is required.");
-    const { scheduleID } = req.params;
+    const { scheduleID: scheduleIdentifier } = req.params;
     const now = getCurrentTimestamp();
 
     let connection;
@@ -1082,16 +1094,24 @@ export const cancelRegularAllBooking = async (req, res) => {
         connection = await getPromiseConnection();
         await connection.beginTransaction();
 
-        const [recurringRes] = await connection.query(
-            `UPDATE tbl_recurring_schedules SET status = "cancelled", updatedAt = ? WHERE id = ?`,
-            [now, scheduleID]
+        // Look up the schedule once, get both keys, avoid ambiguity downstream
+        const [scheduleRows] = await connection.query(
+            `SELECT id, scheduleID FROM tbl_recurring_schedules WHERE id = ? FOR UPDATE`,
+            [scheduleIdentifier]
         );
 
-        if (recurringRes.affectedRows === 0) {
+        if (scheduleRows.length === 0) {
             await connection.rollback();
             connection.release();
             return response.ok(res, "No regular schedule data found", null);
         }
+
+        const schedule = scheduleRows[0];
+
+        const [recurringRes] = await connection.query(
+            `UPDATE tbl_recurring_schedules SET status = "cancelled", updatedAt = ? WHERE id = ?`,
+            [now, schedule.id]
+        );
 
         const [bookingRows] = await connection.query(
             `SELECT bookingID FROM tbl_bookings
@@ -1099,11 +1119,11 @@ export const cancelRegularAllBooking = async (req, res) => {
                AND bookingDate >= ?
                AND status NOT IN ("completed", "cancelled")
              FOR UPDATE`,
-            [scheduleID, now]
+            [schedule.scheduleID, now]  // string code, matching tbl_bookings' actual column values
         );
 
         if (bookingRows.length === 0) {
-            await connection.commit(); 
+            await connection.commit();
             connection.release();
             return response.ok(res, "No more remaining active bookings", null);
         }
@@ -1125,9 +1145,9 @@ export const cancelRegularAllBooking = async (req, res) => {
 
         logActivity({
             userId: req.user?.id ?? null, userRole: req.user?.role ?? null, ipAddress: req.ip,
-            metadata: { scheduleID, },
+            metadata: { scheduleID: schedule.scheduleID },
             action: 'BOOKING_CANCELLED', entityType: 'BOOKING_MODULE',
-            description: `${req.user?.fullname ?? 'Someone'} cancelled a regular schedule with a scheduleID of: ${scheduleID}.`
+            description: `${req.user?.fullname ?? 'Someone'} cancelled a regular schedule with a scheduleID of: ${schedule.scheduleID}.`
         });
 
         return response.ok(res, "All upcoming bookings under this regular schedule are successfully cancelled.", {
@@ -1144,7 +1164,6 @@ export const cancelRegularAllBooking = async (req, res) => {
         return response.serverError(res, "Database error", err);
     }
 };
-
 export const updateRecurringBookingData = async (req, res) => {
     if (!validateFields(req, res, ['paymentStatus', 'scheduleID', 'totalAmount'])) return;
 
@@ -1160,3 +1179,79 @@ export const updateRecurringBookingData = async (req, res) => {
         return response.ok(res, `Regular schedule successfully updated.`);
     })
 }
+
+export const addNextBooking = async (req, res) => {
+    const { scheduleID } = req.params;
+    const conn = await getPromiseConnection();
+
+    try {
+        const [rows] = await conn.query(
+            `SELECT * FROM tbl_recurring_schedules WHERE scheduleID = ?`, [scheduleID]
+        );
+        if (rows.length === 0) {
+            return response.badRequest(res, 'Schedule not found.');
+        }
+        const schedule = rows[0];
+
+        const [[{ lastDate }]] = await conn.query(
+            `SELECT DATE_FORMAT(MAX(bookingDate), '%Y-%m-%d') AS lastDate FROM tbl_bookings WHERE scheduleID = ?`,
+            [scheduleID]
+        );
+
+        const anchorDate = lastDate ?? schedule.startDate;
+        const nextDate = getNextOccurrenceAfter(schedule, anchorDate);
+
+        if (!nextDate) {
+            return response.badRequest(res, 'No further occurrences — schedule may have ended.');
+        }
+
+        const report = await generateBookingsForDates(schedule, [nextDate]);
+
+        if (report.generated === 0) {
+            return response.badRequest(res, 'Could not add the next booking — date may be blocked.', report);
+        }
+
+        return response.ok(res, 'Next booking added successfully.', report);
+    } catch (err) {
+        return response.serverError(res, 'Failed to add next booking.', err);
+    } finally {
+        conn.release();
+    }
+};
+
+export const getNextOccurrenceAfter = (schedule, anchorDate) => {
+    const parseLocalDate = (d) => {
+        const str = typeof d === 'string' ? d : d.toISOString().split('T')[0];
+        const [year, month, day] = str.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    };
+
+    const anchor = parseLocalDate(anchorDate);
+    const endRaw = schedule.endDate ? parseLocalDate(schedule.endDate) : null;
+    const end = endRaw && endRaw.getFullYear() > 1900 ? endRaw : null;
+
+    const cursor = new Date(anchor);
+    cursor.setDate(cursor.getDate() + 1); // search starts the day AFTER anchor
+
+    // Weekly matches occur within 7 days, monthly within ~31 — cap generously for safety
+    const maxIterations = 366;
+
+    for (let i = 0; i < maxIterations; i++) {
+        const dayMatch = schedule.frequency === 'weekly'
+            ? cursor.getDay() === Number(schedule.dayOfWeek)
+            : cursor.getDate() === Number(schedule.dayOfMonth);
+
+        if (dayMatch) {
+            if (end && cursor > end) return null;
+
+            const y = cursor.getFullYear();
+            const m = String(cursor.getMonth() + 1).padStart(2, '0');
+            const d = String(cursor.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return null; 
+};

@@ -209,3 +209,13 @@ export const editRegularBooking = async (editData) => {
         throw error;
     }
 }
+
+export async function addNextBooking(scheduleID) {
+    try {
+        const response = await api.post(`/api/v1/bookings/regular/${scheduleID}/next`);
+        return response;
+    } catch (error) {
+        console.error("Add next booking failed:", error);
+        throw error;
+    }
+}

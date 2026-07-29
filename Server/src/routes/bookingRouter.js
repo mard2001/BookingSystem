@@ -1,5 +1,5 @@
 import express from "express";
-import { cancelBooking, cancelBookingViaEWallet, cancelRegularAllBooking, checkAvailability, confirmBooking, confirmBookingViaEWallet, createRecurringSched, getAvailableSlots, getBookings, getCalendarBookings, getCourtSlots, getHistoricalBookings, getRecurringBookingData, getRegularUser, getUpcomingBookings, updateBookingBookerDetails, updateBookingStatus, updateRecurringBookingData } from "../controller/bookingController.js";
+import { addNextBooking, cancelBooking, cancelBookingViaEWallet, cancelRegularAllBooking, checkAvailability, confirmBooking, confirmBookingViaEWallet, createRecurringSched, getAvailableSlots, getBookings, getCalendarBookings, getCourtSlots, getHistoricalBookings, getRecurringBookingData, getRegularUser, getUpcomingBookings, updateBookingBookerDetails, updateBookingStatus, updateRecurringBookingData } from "../controller/bookingController.js";
 import { authenticate, genericMiddleware } from "../middleware/authenticate.js";
 
 const bookingRouter = express.Router();
@@ -17,6 +17,7 @@ bookingRouter.post('/check/availability', checkAvailability);
 bookingRouter.post('/confirmbooking', genericMiddleware, confirmBooking);
 bookingRouter.post('/confirmbooking-viaewallet/:bookingID', genericMiddleware, confirmBookingViaEWallet);
 bookingRouter.post('/regularbooking', genericMiddleware, createRecurringSched);
+bookingRouter.post('/regular/:scheduleID/next', addNextBooking);
 bookingRouter.put('/update/:bookingID/status', genericMiddleware, updateBookingStatus);
 bookingRouter.put('/update/:bookingID/booker-details', genericMiddleware, updateBookingBookerDetails);
 bookingRouter.put('/cancel/:bookingID/:paymentIntent', cancelBooking);
