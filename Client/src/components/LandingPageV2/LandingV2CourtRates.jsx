@@ -27,7 +27,7 @@ export const LandingV2CourtRates = () => {
     }, { scope: sectionRef })
 
     return (
-        <section id="rates" ref={sectionRef} className='bg-foreground px-6 md:px-10 xl:px-20 pt-20 md:pt-28'>
+        <section id="rates" ref={sectionRef} className='bg-foreground px-6 md:px-10 xl:px-20 pt-20 md:pt-15'>
             <div className='max-w-7xl mx-auto'>
                 <div className="gsap-eyebrow flex items-center gap-3 mb-6">
                     <span className="h-px w-8 bg-primary" />

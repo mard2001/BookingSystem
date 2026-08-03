@@ -57,7 +57,7 @@ export const LandingV2CourtFacility = () => {
     }, { scope: sectionRef });
 
     return (
-        <section id="courts" ref={sectionRef} className="bg-foreground py-20 md:py-28 overflow-hidden">
+        <section id="courts" ref={sectionRef} className="bg-foreground py-20 md:py-15 overflow-hidden">
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                 <div>

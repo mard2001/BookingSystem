@@ -64,7 +64,7 @@ export const LandingV2Hero = () => {
                 </div>
 
                 {/* wavy bottom edge */}
-                <div className="pointer-events-none absolute bottom-0 left-0 w-full leading-[0]">
+                <div className="pointer-events-none absolute -bottom-1 left-0 w-full leading-[0]">
                     <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="block h-16 w-full sm:h-24 lg:h-28" >
                         {/* secondary wave — lighter, sits further back */}
                         <path d="M0,32 C240,90 480,0 720,28 C960,56 1200,110 1440,50 L1440,120 L0,120 Z" fill="#F0F0F2" />
