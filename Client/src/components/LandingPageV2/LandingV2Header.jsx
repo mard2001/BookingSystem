@@ -167,7 +167,7 @@ export const LandingV2Header = () => {
                     // Not logged in: show Log In button
                     <button
                         onClick={() => openModal("login")}
-                        className="hidden md:block text-white/75 hover:text-white text-sm font-semibold tracking-wide transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-md px-1"
+                        className={`hidden md:block text-sm font-semibold tracking-wide transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-md px-1 ${ isScrolled? "text-foreground hover:text-muted-foreground" : "text-primary-darker hover:text-primary-lightdark"}`}
                     >
                         Log In
                     </button>
@@ -178,11 +178,11 @@ export const LandingV2Header = () => {
 
                 {/* Book Now CTA */}
                 <a href="#reservation">
-                    <button className="
+                    <button className={`
                         relative overflow-hidden
                         bg-white text-primary-darker
                         px-3 py-2 lg:px-5 lg:py-2.5 rounded-lg
-                        text-xs lg:text-sm font-black tracking-wider uppercase
+                        text-xs font-black tracking-wider uppercase
                         transition-all duration-300
                         hover:bg-primary-darker hover:text-white
                         hover:ring-2 hover:ring-white/40
@@ -190,7 +190,8 @@ export const LandingV2Header = () => {
                         group
                         cursor-pointer
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60
-                    ">
+                        ${ isScrolled ? "" : "ring-1 ring-primary-dark"}
+                    `}>
                         {/* Shimmer sweep */}
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
                         <span className="relative whitespace-nowrap">Book Now →</span>
@@ -205,12 +206,12 @@ export const LandingV2Header = () => {
                         className="md:hidden flex flex-col gap-1.5 p-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-md"
                     >
                         {menuOpen ? (
-                            <X className="text-white" size={22} />
+                            <X className={`${ isScrolled? "text-foreground hover:text-muted-foreground" : "text-primary-darker hover:text-primary-lightdark"}`} size={22} />
                         ) : (
                             <>
-                                <span className="w-5 h-0.5 bg-white rounded-full" />
-                                <span className="w-4 h-0.5 bg-white/60 rounded-full" />
-                                <span className="w-5 h-0.5 bg-white rounded-full" />
+                                <span className={`w-5 h-0.5 ${ isScrolled? "bg-foreground hover:bg-muted-foreground" : "bg-primary-darker hover:bg-primary-lightdark"} rounded-full`} />
+                                <span className={`w-4 h-0.5 ${ isScrolled? "bg-foreground hover:bg-muted-foreground" : "bg-primary-darker hover:bg-primary-lightdark"} rounded-full`} />
+                                <span className={`w-5 h-0.5 ${ isScrolled? "bg-foreground hover:bg-muted-foreground" : "bg-primary-darker hover:bg-primary-lightdark"} rounded-full`} />
                             </>
                         )}
                     </button>
@@ -222,7 +223,7 @@ export const LandingV2Header = () => {
             <div className={`md:hidden transition-all duration-300 overflow-hidden ${
                 menuOpen ? 'opacity-100 max-h-[28rem]' : 'max-h-0 opacity-0'
             }`}>
-                <div className="border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-primary-darker/95 backdrop-blur-md">
+                <div className="border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-primary-darker/95 backdrop-blur-md text-end">
                     {NAV_LINKS.map((link) => (
                         <a
                             key={link}
@@ -239,7 +240,7 @@ export const LandingV2Header = () => {
                     {loggedInUser?.firstName ? (
                         <>
                             {/* User info */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-end gap-2">
                                 <UserCircle2Icon size={16} className="text-white/60" />
                                 <div>
                                     <p className="text-white text-xs font-bold">{loggedInUser.firstName + " " + loggedInUser.lastName}</p>
@@ -257,7 +258,7 @@ export const LandingV2Header = () => {
                                 </a>
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full text-left px-4 py-2 text-red-300 hover:text-red-200 hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
+                                    className="w-full text-end px-4 py-2 text-red-300 hover:text-red-200 hover:bg-white/10 text-xs font-semibold tracking-wide transition-colors duration-150 cursor-pointer"
                                 >
                                     Log Out
                                 </button>
@@ -266,7 +267,7 @@ export const LandingV2Header = () => {
                     ) : (
                         <button
                             onClick={() => openModal("login")}
-                            className="text-white/80 hover:text-white text-sm font-semibold tracking-wide text-left transition-colors duration-200 cursor-pointer"
+                            className={`text-sm font-semibold tracking-wide transition-colors duration-200 cursor-pointer text-foreground hover:text-muted-foreground text-end`}
                         >
                             Log In
                         </button>

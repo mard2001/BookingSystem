@@ -44,7 +44,7 @@ export const LandingV2Features = () => {
     }, { scope: sectionRef })
 
     return (
-        <section ref={sectionRef} className="bg-foreground px-6 md:px-10 xl:px-20 py-20 md:py-28">
+        <section ref={sectionRef} className="bg-foreground px-6 md:px-10 xl:px-20 pb-20 md:pb-28">
             <div className="max-w-5xl mx-auto text-center">
                 <h2 className="gsap-features-headline text-lg md:text-2xl font-black text-primary">
                     With courts built for every level and a team that loves the game,
