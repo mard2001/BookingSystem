@@ -10,8 +10,8 @@ export const LandingMapContainer = () => {
 
     return (
         <APIProvider apiKey={apiKey} >
-            <div className='w-[100%] h-85 mx-auto mb-20 bg-white/50 rounded-4xl flex justify-center items-center shadow-lg inset-shadow-sm'>
-                <div className='w-[95%] h-80 rounded-3xl overflow-hidden'>
+            <div className='h-full w-full mx-auto bg-white/50 rounded-4xl flex justify-center items-center shadow-lg inset-shadow-sm'>
+                <div className='h-full w-full rounded-3xl overflow-hidden'>
                     <Map defaultZoom={16} defaultCenter={position} mapTypeControl={false} >
                         <Marker position={position} />
                     </Map>

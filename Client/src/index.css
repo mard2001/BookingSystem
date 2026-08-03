@@ -1,41 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
 
 @import "tailwindcss";
 
 @theme {
-  --color-background: #F8F1F3;       
-  --color-foreground: #FDF9FA;       
+  --color-background: #C6C6C8;       
+  --color-foreground: #F0F0F2;       
 
-  --color-card: #F8F9FA;
-  --color-surface: #9AB3C4;         
+  --color-card: #FFFFFF;
+  --color-surface: #C6C6C8;         
 
-  --color-primary-brighter: #A43D52;   
-  --color-primary: #690000;             
-  --color-primary-foreground: #F8F9FA;
-  --color-primary-darker: #3B0000;    
-  --color-primary-lightdark: #8B1E3F;   
-  --color-primary-lighter: #E8C6CF;    
+  --color-primary-brighter: #FFB4A8;   
+  --color-primary: #800000;             
+  --color-primary-foreground: #FFEDEA;
+  --color-primary-darker: #410000;    
+  --color-primary-lightdark: #8F0F07;   
+  --color-primary-lighter: #D44433;    
 
-  --color-secondary-brighter: #8A9BA3;  
-  --color-secondary: #697c83;           
-  --color-secondary-foreground: #F8F9FA;
+  --color-secondary-brighter: #909193;  
+  --color-secondary: #2F3132;           
+  --color-secondary-foreground: #E2E2E4;
 
-  --color-tertiary: #1d293d;  
+  --color-tertiary: #7586FF;  
 
-  --color-muted: #6B4A53;              
-  --color-muted-foreground: #B99AA3;    
+  --color-muted: #787679;              
+  --color-muted-foreground: #ACAAAD;    
 
-  --color-border: #8A5A67;              
+  --color-border: #ACAAAD;              
 
-  --color-highlight: #8B1538;           
+  --color-highlight: #410000;           
   --radius: 0.75rem;
 }
 
 @layer base{
   *{
-    font-family: "Manrope", sans-serif;
+    font-family: "Montserrat", sans-serif;
     font-optical-sizing: auto;
     font-style: normal;
     scrollbar-width: thin;
@@ -97,6 +100,26 @@
 }
 
 @layer components{
+  /* LANDING PAGE */
+  .landingPageV2HeroBG{
+    width: 100%;
+    min-height: 60vh;
+    height: clamp(28rem, 60vh, 48rem);
+    background-color: var(--color-primary-darker); 
+    background-image: 
+      linear-gradient(
+        to left,
+        color-mix(in srgb, var(--color-primary-darker) 85%, transparent) 0%,
+        color-mix(in srgb, var(--color-primary-darker) 88%, transparent) 35%,
+        color-mix(in srgb, var(--color-primary-darker) 92%, transparent) 70%,
+        color-mix(in srgb, var(--color-primary-darker) 90%, var(--color-primary-darker)) 100%
+      ),
+      url(../images/courtHeroBackground.jpg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
   .glass {
     background-color: color-mix(in srgb, var(--color-primary-foreground) 60%, transparent);
     backdrop-filter: blur(16px);
@@ -138,5 +161,6 @@
     border-bottom-right-radius: 50px;
   }
 }
+
 
 @layer utilities{}

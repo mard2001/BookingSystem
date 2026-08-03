@@ -1,4 +1,5 @@
 import { Banknote, CalendarCheck2, Cctv, Clock2Icon, CreditCard, Lightbulb, MapPin, Pyramid, ShieldCheckIcon, Trophy, Users2, Wallet } from "lucide-react";
+import { formatShortHour } from "../utils/ValueFormat";
 
 export const HeroCardsQualities = [
     {
@@ -45,11 +46,24 @@ export const HeroCardsQualities = [
     
 ];
 
-export const availableCourts = [
-    { id: 1, courtLabel: "Court A", courtSport: "PickleBall", courtType: "Outdoor", courtDesc: "Climate Controlled • Pro-cushion surface", isActive: "Available", hourlyPrice1: 450.00, hourlyPrice2: 550.00 },
-    { id: 2, courtLabel: "Court B", courtSport: "PickleBall", courtType: "Outdoor", courtDesc: "Natural Light • Wind-screened area", isActive: "Available", hourlyPrice1: 400.00, hourlyPrice2: 500.00 },
-    { id: 3, courtLabel: "Court C", courtSport: "BasketBall", courtType: "Indoor",  courtDesc: "Climate Controlled • Pro-cushion surface", isActive: "Reserved", hourlyPrice1: 800.00, hourlyPrice2: 1000.00 },
-]
+export const HeroCardsQualitiesV2 = [
+    {
+        icon: Users2,
+        title: "Thriving Community",
+        description: "Join a welcoming community of beginners, enthusiasts, and competitive players through regular games and events."
+    },
+    {
+        icon: MapPin,
+        title: "Highly Accessible",
+        description: "Conveniently located with tournament-grade LED lighting, making it easy to play day or night."
+    },
+    {
+        icon: Trophy,
+        title: "Championship Courts",
+        description: "Professional-grade acrylic courts engineered for consistent ball bounce, reliable traction, and tournament-level play."
+    },
+    
+];
 
 export const paymentOptions = [
     {
@@ -75,11 +89,14 @@ export const WEEKEND_PM_START = 17; // 5PM; set to undefined if no price differe
 
 
 export const BUSINESS_INFO = {
-    name: "Bunal Brad",
+    name: "Bunal Brad Pickleball Court",
     logoName: "bunalBrad_Transparent1.png",
     tagline: "Premium Outdoor Pickleball Experience",
     address: "Sto. Nino Ylaya, Talamban, Cebu City",
+    openingHours: "03:00 PM",
+    closingHours: "11:00 PM",
     longlat: { lat: 10.373536281736298, lng: 123.92269220472345 },
+    googleMapLocation: "9WFG+MW4, Mandaue, 6014 Cebu, Philippines",
     email: "info@ylayasmashrally.com",
     phone: "09063220193",
     bankaccounts: [
@@ -87,7 +104,7 @@ export const BUSINESS_INFO = {
             accountProviderLogo: "GCash_Logo.png",
             accountProviderDisplayName: "GCash",
             accountProvider: "gcash",
-            accountName: "Marvin Navarro", 
+            accountName: "Marvin Navarro",
             accountQR: "GCash_QR.jpg",
             accountNumber: "09063220193",
             description: "Direct Gcash payment."
@@ -96,7 +113,7 @@ export const BUSINESS_INFO = {
             accountProviderLogo: "PayMaya_Logo.png",
             accountProviderDisplayName: "PayMaya",
             accountProvider: "paymaya",
-            accountName: "Marvin Navarro", 
+            accountName: "Marvin Navarro",
             accountQR: "PayMaya_QR.jpg",
             accountNumber: "09063220193",
             description: "Direct Paymaya payment."
@@ -105,13 +122,33 @@ export const BUSINESS_INFO = {
             accountProviderLogo: "BPI_Logo.png",
             accountProviderDisplayName: "BPI",
             accountProvider: "bpi",
-            accountName: "Marvin Navarro", 
+            accountName: "Marvin Navarro",
             accountQR: "BPI_QR.jpg",
             accountNumber: "9939126683",
             description: "Direct BPI Payment."
         },
     ]
 };
+
+
+
+export const courtCards = [
+    { title: "2 outdoor courts", desc: "Official Court Size" },
+    { title: `${formatShortHour(BUSINESS_INFO.openingHours)} – ${formatShortHour(BUSINESS_INFO.closingHours)}`, desc: "Open every day" },
+    { title: "Message us to book", desc: "We'll lock in your court" },
+    { title: "₱250 – ₱300", desc: "Hourly rates, all-in" },
+];
+
+export const courtTypes = [
+    {
+        name: "PROFESSIONAL COURT",
+        desc: "Standard full-size competition pickleball court, billed hourly.",
+        rates: [
+            { label: "Standard Rate", time: "2:00 PM – 4:00 PM", price: "₱250" },
+            { label: "Peak Hours", time: "5:00 PM – 11:00 PM", price: "₱300" },
+        ],
+    },
+];
 
 export const allPaymentOptions = [
     ...paymentOptions,
